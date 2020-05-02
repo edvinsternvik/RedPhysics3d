@@ -23,7 +23,7 @@ namespace redPhysics3d {
         virtual void updateAABBsize() = 0;
 
     public:
-        float AABBsize;
+        Vector3 AABBmin, AABBmax;
     
     private:
         Vector3 m_position;

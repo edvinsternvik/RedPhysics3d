@@ -1,23 +1,29 @@
 #include "CollisionBox.h"
 #include <cmath>
 
-#define sqrtof3 1.732051
-
 namespace redPhysics3d {
 
     CollisionBox::CollisionBox() : m_size(1.0, 1.0, 1.0) {
-        updateAABBsize();
         verticies = getBoxVerticies();
+        updateAABBsize();
     }
 
     void CollisionBox::updateAABBsize() {
-        AABBsize = std::max(std::max(m_size.x, m_size.y), m_size.z) * sqrtof3;
+        AABBmin = AABBmax = verticies[0];
+        for(int i = 1; i < 8; ++i) {
+            if(verticies[i].x < AABBmin.x) AABBmin.x = verticies[i].x;
+            if(verticies[i].y < AABBmin.y) AABBmin.y = verticies[i].y;
+            if(verticies[i].z < AABBmin.z) AABBmin.z = verticies[i].z;
+            if(verticies[i].x > AABBmax.x) AABBmax.x = verticies[i].x;
+            if(verticies[i].y > AABBmax.y) AABBmax.y = verticies[i].y;
+            if(verticies[i].z > AABBmax.z) AABBmax.z = verticies[i].z;
+        }
     }
 
     void CollisionBox::setSize(const Vector3& newSize) {
         m_size = newSize;
-        updateAABBsize();
         verticies = getBoxVerticies();
+        updateAABBsize();
     }
 
     std::array<Vector3, 8> CollisionBox::getBoxVerticies() {
