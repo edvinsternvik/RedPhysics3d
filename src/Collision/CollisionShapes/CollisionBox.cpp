@@ -3,9 +3,8 @@
 
 namespace redPhysics3d {
 
-    CollisionBox::CollisionBox() : m_size(1.0, 1.0, 1.0) {
-        verticies = getBoxVerticies();
-        updateAABBsize();
+    CollisionBox::CollisionBox() : CollisionShape() {
+        updateCollisionShape();
     }
 
     void CollisionBox::updateAABBsize() {
@@ -20,16 +19,35 @@ namespace redPhysics3d {
         }
     }
 
-    void CollisionBox::setSize(const Vector3& newSize) {
-        m_size = newSize;
+    std::array<Vector3, 8> CollisionBox::getBoxVerticies() {
+        Vector3 hs = m_size; // * 0.5
+        return { Vector3(hs.x,  hs.y, hs.z) * m_rotationMatrix, Vector3(hs.x,  hs.y, -hs.z)  * m_rotationMatrix, Vector3(-hs.x,  hs.y, -hs.z) * m_rotationMatrix, Vector3(-hs.x,  hs.y, hs.z) * m_rotationMatrix,
+                 Vector3(hs.x, -hs.y, hs.z) * m_rotationMatrix, Vector3(hs.x, -hs.y, -hs.z) * m_rotationMatrix, Vector3(-hs.x, -hs.y, -hs.z) * m_rotationMatrix, Vector3(-hs.x, -hs.y, hs.z) * m_rotationMatrix};
+    }
+
+    const Matrix3x3& CollisionBox::getRotationMatrix() const {
+        return m_rotationMatrix;
+    }
+    
+    const Matrix3x3& CollisionBox::getInvertedRotationMatrix() const {
+        return m_invertedRotationMatrix;
+    }
+
+    void CollisionBox::updateRotationMatricies() {
+        m_rotationMatrix  = Matrix3x3::getRotationMatrixX(getRotation().x);
+        m_rotationMatrix *= Matrix3x3::getRotationMatrixY(getRotation().y);
+        m_rotationMatrix *= Matrix3x3::getRotationMatrixZ(getRotation().z);
+
+        // m_invertedRotationMatrix = m_rotationMatrix.inverse();
+        m_invertedRotationMatrix = Matrix3x3::getRotationMatrixZ(-getRotation().z);
+        m_invertedRotationMatrix *= Matrix3x3::getRotationMatrixY(-getRotation().y);
+        m_invertedRotationMatrix *= Matrix3x3::getRotationMatrixX(-getRotation().x);
+    }
+
+    void CollisionBox::updateCollisionShape() {
+        updateRotationMatricies();
         verticies = getBoxVerticies();
         updateAABBsize();
     }
-
-    std::array<Vector3, 8> CollisionBox::getBoxVerticies() {
-        Vector3 hs = m_size; // * 0.5
-        return { Vector3(hs.x,  hs.y, hs.z), Vector3(hs.x,  hs.y, -hs.z), Vector3(-hs.x,  hs.y, -hs.z), Vector3(-hs.x,  hs.y, hs.z),
-                 Vector3(hs.x, -hs.y, hs.z), Vector3(hs.x, -hs.y, -hs.z), Vector3(-hs.x, -hs.y, -hs.z), Vector3(-hs.x, -hs.y, hs.z)};
-    }
-
+    
 }

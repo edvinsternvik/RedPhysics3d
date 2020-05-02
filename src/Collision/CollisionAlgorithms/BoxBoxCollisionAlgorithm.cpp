@@ -5,24 +5,14 @@ namespace redPhysics3d {
 
     bool BoxBoxCollisionAlgorithm::testCollision(CollisionShape* shape1, CollisionShape* shape2) {
         CollisionBox* box1 = (CollisionBox*)shape1, *box2 = (CollisionBox*)shape2;
-        
-        Matrix3x3 rMat1 = Matrix3x3::getRotationMatrixX(box1->getRotation().x);
-        rMat1 *= Matrix3x3::getRotationMatrixY(box1->getRotation().y);
-        rMat1 *= Matrix3x3::getRotationMatrixZ(box1->getRotation().z);
-        Matrix3x3 rMat2 = Matrix3x3::getRotationMatrixX(box2->getRotation().x);
-        rMat2 *= Matrix3x3::getRotationMatrixY(box2->getRotation().y);
-        rMat2 *= Matrix3x3::getRotationMatrixZ(box2->getRotation().z);
-
-        Matrix3x3* box1RotMat = &rMat1, *box2RotMat = &rMat2;
 
         for(int iterations = 0; iterations < 2; ++iterations) {
             Vector3 deltaPos = box2->getPosition() - box1->getPosition();
             Vector3 min, max;
             for(int i = 0; i < 8; ++i) {
-                Vector3 rotatedVertex = (box2->verticies[i]);
-                rotatedVertex = rotatedVertex * *box2RotMat;
-                rotatedVertex = rotatedVertex + deltaPos;
-                rotatedVertex = rotatedVertex * box1RotMat->inverse();
+                Vector3 rotatedVertex = (box2->verticies[i]) + deltaPos;
+
+                rotatedVertex = rotatedVertex * box1->getInvertedRotationMatrix();
 
                 if(i == 0) min = max = rotatedVertex;
                 else {
@@ -42,10 +32,6 @@ namespace redPhysics3d {
             CollisionBox* temp = box1;
             box1 = box2;
             box2 = temp;
-
-            Matrix3x3* rMatTemp = box1RotMat;
-            box1RotMat = box2RotMat;
-            box2RotMat = rMatTemp;
         }
 
         return true;

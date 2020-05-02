@@ -13,19 +13,20 @@ namespace redPhysics3d {
         virtual bool testCollision(const CollisionShape* const o) { return true; }
         virtual void updateAABBsize();
 
-        const Vector3& getRotation() const { return m_rotation; }
-        const Vector3& getSize() const { return m_size; }
-        void setRotation(const Vector3& newRotation) { m_rotation = newRotation; }
-        void setSize(const Vector3& newSize);
+        const Matrix3x3& getRotationMatrix() const;
+        const Matrix3x3& getInvertedRotationMatrix() const;
 
     private:
         std::array<Vector3, 8> getBoxVerticies();
 
+        void updateRotationMatricies();
+        virtual void updateCollisionShape();
+
     public:
         std::array<Vector3, 8> verticies;
-        
+
     private:
-        Vector3 m_rotation, m_size;
+        Matrix3x3 m_rotationMatrix, m_invertedRotationMatrix;
     };
 
 }
