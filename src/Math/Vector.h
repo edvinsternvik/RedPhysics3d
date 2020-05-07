@@ -38,6 +38,10 @@ namespace redPhysics3d {
 		Vector3(const float& x, const float& y, const float& z);
 		Vector3();
 
+		float dot(const Vector3& other);
+		Vector3 cross(const Vector3& other);
+		float magnitude();
+
 		Vector3 operator+(const Vector3& other) const {
 			return Vector3(this->x + other.x, this->y + other.y, this->z + other.z);
 		}

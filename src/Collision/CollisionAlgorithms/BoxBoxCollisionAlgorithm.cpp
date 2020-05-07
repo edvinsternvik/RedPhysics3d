@@ -1,40 +1,56 @@
 #include "CollisionAlgorithm.h"
 #include "../CollisionShapes/CollisionBox.h"
+#include <vector>
 
 namespace redPhysics3d {
 
+    void getMinMax(CollisionBox* cb, Vector3& axis, float& min, float& max);
+
     bool BoxBoxCollisionAlgorithm::testCollision(CollisionShape* shape1, CollisionShape* shape2) {
         CollisionBox* box1 = (CollisionBox*)shape1, *box2 = (CollisionBox*)shape2;
+        
+        std::vector<std::pair<float, Vector3>> smallestDepths;
+        std::vector<Vector3> axes = {Vector3(1.0,0,0) * box1->getRotationMatrix(), Vector3(0,1.0,0) * box1->getRotationMatrix(), Vector3(0,0,-1.0) * box1->getRotationMatrix(),
+                                     Vector3(1.0,0,0) * box2->getRotationMatrix(), Vector3(0,1.0,0) * box2->getRotationMatrix(), Vector3(0,0,-1.0) * box2->getRotationMatrix()};
 
-        for(int iterations = 0; iterations < 2; ++iterations) {
-            Vector3 deltaPos = box2->getPosition() - box1->getPosition();
-            Vector3 min, max;
-            for(int i = 0; i < 8; ++i) {
-                Vector3 rotatedVertex = (box2->verticies[i]) + deltaPos;
-
-                rotatedVertex = rotatedVertex * box1->getInvertedRotationMatrix();
-
-                if(i == 0) min = max = rotatedVertex;
-                else {
-                    min.x = std::min(min.x, rotatedVertex.x);
-                    min.y = std::min(min.y, rotatedVertex.y);
-                    min.z = std::min(min.z, rotatedVertex.z);
-
-                    max.x = std::max(max.x, rotatedVertex.x);
-                    max.y = std::max(max.y, rotatedVertex.y);
-                    max.z = std::max(max.z, rotatedVertex.z);
-                }
+        for(int i = 0; i < 3; ++i) {
+            for(int j = 3; j < 6; ++j) {
+                axes.push_back(axes[i].cross(axes[j]));
             }
-
-            Vector3 hs = box1->getSize();
-            if(max.x < -hs.x || min.x > hs.x || max.y < -hs.y || min.y > hs.y || max.z < -hs.z || min.z > hs.z) return false;
-
-            CollisionBox* temp = box1;
-            box1 = box2;
-            box2 = temp;
         }
 
+        for(Vector3& axis : axes) {
+            float min1, max1, min2, max2;
+            getMinMax(box1, axis, min1, max1);
+            getMinMax(box2, axis, min2, max2);
+
+            if(min1 > max2 || min2 > max1) return false;  
+
+            float smallest = std::abs(min2 - max1) < std::abs(max2 - min1) ? min2 - max1 : max2 - min1;
+            smallestDepths.push_back(std::pair<float, Vector3>(smallest, axis * smallest));
+        }
+
+        int depthId = 0;
+        for(int i = 0; i < smallestDepths.size(); ++i) {
+            if(smallestDepths[i].first != 0.0 && std::abs(smallestDepths[i].first) < std::abs(smallestDepths[depthId].first)) depthId = i;
+        }
+
+        Vector3 depth = smallestDepths[depthId].second;
+
         return true;
+    }
+
+    void getMinMax(CollisionBox* cb, Vector3& axis, float& min, float& max) {
+        for(int i = 0; i < 8; ++i) {
+            Vector3 vertex = cb->verticies[i] + cb->getPosition();
+            float projectionOnAxis = vertex.dot(axis); // Axis must be normalized
+
+            if(i == 0) min = max = projectionOnAxis;
+            else {
+                min = std::min(min, projectionOnAxis);
+                max = std::max(max, projectionOnAxis);
+            }
+        }
     }
 
 }
