@@ -15,7 +15,11 @@ namespace redPhysics3d {
 
         for(int i = 0; i < 3; ++i) {
             for(int j = 3; j < 6; ++j) {
-                axes.push_back(axes[i].cross(axes[j]));
+                Vector3 cross = axes[i].cross(axes[j]);
+                if(cross.x != 0 || cross.y != 0 || cross.z != 0) {
+                    cross.normalize();
+                    axes.push_back(cross);
+                }
             }
         }
 
@@ -24,7 +28,7 @@ namespace redPhysics3d {
             getMinMax(box1, axis, min1, max1);
             getMinMax(box2, axis, min2, max2);
 
-            if(min1 > max2 || min2 > max1) return false;  
+            if(min1 > max2 || min2 > max1) return false;
 
             float smallest = std::abs(min2 - max1) < std::abs(max2 - min1) ? min2 - max1 : max2 - min1;
             smallestDepths.push_back(std::pair<float, Vector3>(smallest, axis * smallest));
@@ -35,7 +39,9 @@ namespace redPhysics3d {
             if(smallestDepths[i].first != 0.0 && std::abs(smallestDepths[i].first) < std::abs(smallestDepths[depthId].first)) depthId = i;
         }
 
-        Vector3 depth = smallestDepths[depthId].second;
+        Vector3 depth = smallestDepths[depthId].second * 1.001;
+
+        box1->setPosition(box1->getPosition() + depth);
 
         return true;
     }

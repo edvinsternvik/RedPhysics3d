@@ -26,4 +26,11 @@ namespace redPhysics3d {
     float Vector3::magnitude() {
         return std::sqrt(x*x + y*y + z*z);
     }
+
+    void Vector3::normalize() {
+        double invSqrt = 1.0000 / std::sqrt(x*x + y*y + z*z);
+        x *= invSqrt;
+        y *= invSqrt;
+        z *= invSqrt;
+    }
 }
