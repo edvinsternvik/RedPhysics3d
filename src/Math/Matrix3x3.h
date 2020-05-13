@@ -3,6 +3,8 @@
 
 namespace redPhysics3d {
 
+    class Vector3;
+
     class Matrix3x3 {
     public:
         Matrix3x3();
@@ -17,6 +19,7 @@ namespace redPhysics3d {
         static Matrix3x3 getRotationMatrixX(const float& rotationX);
         static Matrix3x3 getRotationMatrixY(const float& rotationY);
         static Matrix3x3 getRotationMatrixZ(const float& rotationZ);
+        static Matrix3x3 getRotationMatrix(const Vector3& rotation);
 
         Matrix3x3 operator*(const Matrix3x3& o) const {
 			return Matrix3x3(

@@ -1,5 +1,6 @@
 #include "Matrix3x3.h"
 #include <cmath>
+#include "Vector.h"
 
 namespace redPhysics3d {
 
@@ -41,6 +42,10 @@ namespace redPhysics3d {
 
     Matrix3x3 Matrix3x3::getRotationMatrixZ(const float& rotationZ) {
         return Matrix3x3(std::cos(rotationZ), -std::sin(rotationZ), 0.0,    std::sin(rotationZ), std::cos(rotationZ), 0.0,   0.0, 0.0, 1.0);
+    }
+
+    Matrix3x3 Matrix3x3::getRotationMatrix(const Vector3& rotation) {
+        return getRotationMatrixX(rotation.x) * getRotationMatrixY(rotation.y) * getRotationMatrixZ(rotation.z);
     }
 
 

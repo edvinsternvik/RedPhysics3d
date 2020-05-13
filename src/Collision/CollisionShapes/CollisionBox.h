@@ -15,6 +15,7 @@ namespace redPhysics3d {
 
         const Matrix3x3& getRotationMatrix() const;
         const Matrix3x3& getInvertedRotationMatrix() const;
+        std::array<Vector3, 4> getFaceVerticies(int index);
 
     private:
         std::array<Vector3, 8> getBoxVerticies();

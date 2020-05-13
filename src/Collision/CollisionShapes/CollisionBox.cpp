@@ -33,6 +33,25 @@ namespace redPhysics3d {
         return m_invertedRotationMatrix;
     }
 
+    std::array<Vector3, 4> CollisionBox::getFaceVerticies(int index) {
+        switch(index) {
+        case 0:
+            return { verticies[0], verticies[1], verticies[5], verticies[4] }; // Positive x
+        case 1:
+            return { verticies[0], verticies[1], verticies[2], verticies[3] }; // Positive y
+        case 2:
+            return { verticies[1], verticies[2], verticies[6], verticies[5] }; // Negative z
+        case 3:
+            return { verticies[2], verticies[3], verticies[7], verticies[6] }; // Negative x
+        case 4:
+            return { verticies[4], verticies[5], verticies[6], verticies[7] }; // Negative y
+        case 5:
+            return { verticies[0], verticies[3], verticies[7], verticies[4] }; // Positive z
+        }
+        
+        return { Vector3(), Vector3(), Vector3(), Vector3() };
+    }
+
     void CollisionBox::updateRotationMatricies() {
         m_rotationMatrix  = Matrix3x3::getRotationMatrixX(getRotation().x);
         m_rotationMatrix *= Matrix3x3::getRotationMatrixY(getRotation().y);
