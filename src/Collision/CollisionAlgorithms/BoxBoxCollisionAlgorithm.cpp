@@ -39,7 +39,7 @@ namespace redPhysics3d {
             getMinMax(box2, axes[i], min2, max2);
 
             // Found a separating axis -> no collision
-            if(min1 > max2 || min2 > max1) false;
+            if(min1 > max2 || min2 > max1) return false;  
 
             float smallest = std::abs(min2 - max1) < std::abs(max2 - min1) ? min2 - max1 : max2 - min1;
             axesSeparationDepths.push_back(smallest);
@@ -119,9 +119,49 @@ namespace redPhysics3d {
                 }
             }
 
-            // Transform the verticies back into incidentShape local space
+            // Transform the verticies back into world space
             Matrix3x3 referenceFaceLocalSpaceMatrixInv = referenceFaceLocalSpaceMatrix.inverse();
             for(Vector3& v : contactPoints) v = (v * referenceFaceLocalSpaceMatrixInv) - deltaPos + incidentShape->getPosition();
+        }
+        else {
+            // Calculate contact points for edge vs edge collision
+
+            // Todo: get colliding edges directly instead of testing each edge pair
+
+            // Get edge pairs
+            std::vector<std::pair<Vector3,Vector3>> b1Edges, b2Edges;
+
+            for(int i = 0; i < 4; ++i) {
+                int n = (i+1)%4;
+                b1Edges.push_back(std::pair<Vector3,Vector3>(box1->verticies[i], box1->verticies[n]));
+                b2Edges.push_back(std::pair<Vector3,Vector3>(box2->verticies[i], box2->verticies[n]));
+
+                int j = i + 4;
+                int m = n + 4;
+                b1Edges.push_back(std::pair<Vector3,Vector3>(box1->verticies[j], box1->verticies[m]));
+                b2Edges.push_back(std::pair<Vector3,Vector3>(box2->verticies[j], box2->verticies[m]));
+
+                b1Edges.push_back(std::pair<Vector3,Vector3>(box1->verticies[i], box1->verticies[j]));
+                b2Edges.push_back(std::pair<Vector3,Vector3>(box2->verticies[i], box2->verticies[j]));
+            }
+
+            // Calculate edge pair with smallest distance between them
+            Vector3 smallestV;
+            float smallest = std::numeric_limits<float>::max();
+            for(auto& b1E : b1Edges) {
+                for(auto& b2E : b2Edges) {
+                    Vector3 res1, res2;
+                    if(computeClosestPointBetweenEdges(b1E.first + box1->getPosition(), b1E.second + box1->getPosition(), b2E.first + box2->getPosition(), b2E.second + box2->getPosition(), res1, res2)) {
+                        Vector3 delta = res2 - res1;
+                        if(delta.magnitudeSquare() < smallest) {
+                            smallest = delta.magnitudeSquare();   
+                            smallestV = res2;
+                        }
+                    }
+                }
+            }
+
+            contactPoints.push_back(smallestV);
         }
 
         Vector3 depth = axes[depthIndex] * axesSeparationDepths[depthIndex] * 1.001;

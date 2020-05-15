@@ -41,6 +41,7 @@ namespace redPhysics3d {
 		float dot(const Vector3& other);
 		Vector3 cross(const Vector3& other);
 		float magnitude();
+		float magnitudeSquare();
 		void normalize();
 
 		Vector3 operator+(const Vector3& other) const {
