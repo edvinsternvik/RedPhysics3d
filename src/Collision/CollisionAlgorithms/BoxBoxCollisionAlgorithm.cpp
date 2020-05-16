@@ -17,8 +17,8 @@ namespace redPhysics3d {
         std::vector<float> axesSeparationDepths;
 
         // Calculate the face axes
-        std::vector<Vector3> axes = {Vector3(1.0,0,0) * box1->getRotationMatrix(), Vector3(0,1.0,0) * box1->getRotationMatrix(), Vector3(0,0,1.0) * box1->getRotationMatrix(),
-                                     Vector3(1.0,0,0) * box2->getRotationMatrix(), Vector3(0,1.0,0) * box2->getRotationMatrix(), Vector3(0,0,1.0) * box2->getRotationMatrix()};
+        std::vector<Vector3> axes = {Vector3(1.0,0,0) * box1->getRotationMatrix(), Vector3(0,1.0,0) * box1->getRotationMatrix(), Vector3(0,0,-1.0) * box1->getRotationMatrix(),
+                                     Vector3(1.0,0,0) * box2->getRotationMatrix(), Vector3(0,1.0,0) * box2->getRotationMatrix(), Vector3(0,0,-1.0) * box2->getRotationMatrix()};
 
 
         // Calculate the edge axes
@@ -68,10 +68,8 @@ namespace redPhysics3d {
             CollisionBox* incidentShape =  isBox1Reference ? box2 : box1; // Incident shape is the other shape
 
             // Get all face normals for the incident shape
-            Vector3 incidentFaceNormals[6] = { axes[0], axes[1], axes[2], axes[0] * -1, axes[1] * -1, axes[2] * -1 };
-            if(isBox1Reference) { 
-                incidentFaceNormals[0] = axes[3]; incidentFaceNormals[1] = axes[4]; incidentFaceNormals[2] = axes[5]; incidentFaceNormals[3] = axes[3] * -1; incidentFaceNormals[4] = axes[4] * -1; incidentFaceNormals[5] = axes[5] * -1; 
-            }
+            int a = isBox1Reference ? 3 : 0;
+            Vector3 incidentFaceNormals[6] = { axes[a], axes[a + 1], axes[a + 2], axes[a] * -1, axes[a + 1] * -1, axes[a + 2] * -1 };
 
             // Get the incident face, which is the face most antiparallel to the reference face
             int incidentFaceIndex = 0;
