@@ -1,15 +1,16 @@
 #pragma once
 #include "../CollisionShapes/CollisionShape.h"
+#include "../CollisionData.h"
 
 namespace redPhysics3d {
 
     class CollisionAlgorithm {
     public:
-        virtual bool testCollision(CollisionShape* shape1, CollisionShape* shape2) = 0;
+        virtual CollisionData testCollision(CollisionShape* shape1, CollisionShape* shape2) = 0;
     };
 
     class BoxBoxCollisionAlgorithm : public CollisionAlgorithm {
-        virtual bool testCollision(CollisionShape* shape1, CollisionShape* shape2);
+        virtual CollisionData testCollision(CollisionShape* shape1, CollisionShape* shape2);
     };
 
 }

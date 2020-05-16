@@ -1,7 +1,6 @@
 #include "PhysicsWorld.h"
+#include "Response/CollisionResponse.h"
 
-
-#include <iostream>
 
 namespace redPhysics3d {
 
@@ -9,10 +8,11 @@ namespace redPhysics3d {
         for(int i = 0; i < m_collisionShapes.size(); ++i) {
             for(int j = i + 1; j < m_collisionShapes.size(); ++j) {
                 if(m_collisionShapes[i]->testAABBCollision(m_collisionShapes[j].get())) {
-                    std::cout << "AABB" << std::endl;
                     CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(m_collisionShapes[i]->getShapeType(), m_collisionShapes[j]->getShapeType());
-                    if(collisionTestAlgorithm->testCollision(m_collisionShapes[i].get(), m_collisionShapes[j].get())) {
-                        std::cout << "COLLISION" << std::endl;
+
+                    CollisionData collisionData = collisionTestAlgorithm->testCollision(m_collisionShapes[i].get(), m_collisionShapes[j].get());
+                    if(collisionData.collided) {
+                        CollisionResponse::collisionResponse(collisionData);
                     }
                 }
             }
