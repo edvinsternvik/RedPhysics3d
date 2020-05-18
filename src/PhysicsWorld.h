@@ -17,6 +17,10 @@ namespace redPhysics3d {
         StaticBody* addStaticBody();
         void removeRigidBody(RigidBody* rigidbody);
         void removeStaticBody(StaticBody* staticbody);
+
+    private:
+        void calculateRigidBodyCollisions();
+        void calculateStaticBodyCollisions();
         
     public:
         Vector3 gravity;

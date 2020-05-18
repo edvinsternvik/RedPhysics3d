@@ -1,27 +1,31 @@
 #include "CollisionResponse.h"
-#include "../CollisionBody/CollisionBody.h"
+
+#include "../CollisionBody/RigidBody.h"
 
 namespace redPhysics3d {
 
     void CollisionResponse::collisionResponse(const CollisionData& collisionData, CollisionBody* b1, CollisionBody* b2) {
-        Vector3 depth = collisionData.collider1Normal * collisionData.depth * 1.001;
-        b1->position = (collisionData.collider1->getPosition() + depth * 0.5);
-        b2->position = (collisionData.collider2->getPosition() - depth * 0.5);
+        bool b1Dynamic = b1->getCollisionBodyType() == CollisionBodyType::Dynamic, b2Dynamic = b2->getCollisionBodyType() == CollisionBodyType::Dynamic;
 
-        if(collisionData.contactPoints.size() > 0) {
-            Vector3 contactPoint;
-            for(int i = 0; i < collisionData.contactPoints.size(); ++i) contactPoint = contactPoint + collisionData.contactPoints[i];
-            contactPoint = contactPoint / (float)collisionData.contactPoints.size();
-            Vector3 F = collisionData.collider1Normal * collisionData.depth;
+        // Vector3 depth = collisionData.collider1Normal * collisionData.depth * 1.001;
+        // float movementMultiplier = (b1->getCollisionBodyType() == CollisionBodyType::Dynamic && b2->getCollisionBodyType() == CollisionBodyType::Dynamic) ? 0.5 : 1.0;
 
-            Vector3 C1 = contactPoint - collisionData.collider1->getPosition();
-            Vector3 R1 = C1.cross(F);
-            b1->rotation = (collisionData.collider1->getRotation() + R1 * 0.5);
+        // if(b1Dynamic) b1->position = (collisionData.collider1->getPosition() + depth * movementMultiplier);
+        // if(b2Dynamic) b2->position = (collisionData.collider2->getPosition() - depth * movementMultiplier);
 
-            Vector3 C2 = contactPoint - collisionData.collider2->getPosition();
-            Vector3 R2 = C2.cross(F);
-            b2->rotation = (collisionData.collider2->getRotation() + R2 * -0.5);
-        }
+        Vector3 v1 = b1Dynamic ? ((RigidBody*)b1)->linearVelocity : Vector3(0.0, 0.0, 0.0);
+        Vector3 v2 = b2Dynamic ? ((RigidBody*)b2)->linearVelocity : Vector3(0.0, 0.0, 0.0);
+        float invMass1 = b1Dynamic ? ((RigidBody*)b1)->getInverseMass() : 0.0;
+        float invMass2 = b2Dynamic ? ((RigidBody*)b2)->getInverseMass() : 0.0;
+        Vector3 deltaVelocity = v1 - v2;
+
+        float velNormalDot = deltaVelocity.dot(collisionData.collider1Normal);
+
+        float J = (-velNormalDot * 2) / (collisionData.collider1Normal.dot(collisionData.collider1Normal) * (invMass1 + invMass2));
+
+        if(b1Dynamic) ((RigidBody*)b1)->linearVelocity += collisionData.collider1Normal * (J * invMass1);
+        if(b2Dynamic) ((RigidBody*)b2)->linearVelocity -= collisionData.collider1Normal * (J * invMass2);
+
     }
 
 }

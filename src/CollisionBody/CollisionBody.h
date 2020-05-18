@@ -7,9 +7,15 @@
 
 namespace redPhysics3d {
 
+    enum CollisionBodyType {
+        Dynamic, Static
+    };
+
     class CollisionBody {
     public:
         CollisionBody();
+
+        virtual CollisionBodyType getCollisionBodyType() = 0;
 
         template<class T>
         T* addCollisionShape() {

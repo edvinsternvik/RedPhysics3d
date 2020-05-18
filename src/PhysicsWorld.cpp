@@ -1,44 +1,23 @@
 #include "PhysicsWorld.h"
 #include "Response/CollisionResponse.h"
 
-
 namespace redPhysics3d {
 
     void PhysicsWorld::stepSimulation(float deltaTime) {
-        for(int i = 0; i < m_rigidbodies.size(); ++i) {
-            for(int j = i + 1; j < m_rigidbodies.size(); ++j) {
-                for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
-                    for(auto& collisionShape2 : m_rigidbodies[j]->collisionShapes) {
+        calculateRigidBodyCollisions();
+        calculateStaticBodyCollisions();
 
-                        if(collisionShape1->testAABBCollision(collisionShape2.get())) {
-                            CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
+        // Update velocities
+        // Solve constraints
+        // Update positions
 
-                            CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
-                            if(collisionData.collided) {
-                                CollisionResponse::collisionResponse(collisionData, m_rigidbodies[i].get(), m_rigidbodies[j].get());
-                            }
-                        }
+        for(auto& rb : m_rigidbodies) {
+            Vector3 acceleration = rb->m_externalForce * rb->getInverseMass();
 
-                    }
-                }
-            }
+            rb->linearVelocity += acceleration * deltaTime;
+            rb->position += rb->linearVelocity * deltaTime;
 
-            for(int j = 0; j < m_staticbodies.size(); ++j) {
-                for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
-                    for(auto& collisionShape2 : m_staticbodies[j]->collisionShapes) {
-
-                        if(collisionShape1->testAABBCollision(collisionShape2.get())) {
-                            CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
-
-                            CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
-                            if(collisionData.collided) {
-                                CollisionResponse::collisionResponse(collisionData, nullptr, nullptr);
-                            }
-                        }
-
-                    }
-                }
-            }
+            rb->clearForce();
         }
     }
 
@@ -69,6 +48,49 @@ namespace redPhysics3d {
             }
         }
     }
+
+    void PhysicsWorld::calculateRigidBodyCollisions() {
+        for(int i = 0; i < m_rigidbodies.size(); ++i) {
+            for(int j = i + 1; j < m_rigidbodies.size(); ++j) {
+                for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
+                    for(auto& collisionShape2 : m_rigidbodies[j]->collisionShapes) {
+
+                        if(collisionShape1->testAABBCollision(collisionShape2.get())) {
+                            CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
+
+                            CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
+                            if(collisionData.collided) {
+                                CollisionResponse::collisionResponse(collisionData, m_rigidbodies[i].get(), m_rigidbodies[j].get());
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
+    void PhysicsWorld::calculateStaticBodyCollisions() {
+        for(int i = 0; i < m_rigidbodies.size(); ++i) {
+            for(int j = 0; j < m_staticbodies.size(); ++j) {
+                for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
+                    for(auto& collisionShape2 : m_staticbodies[j]->collisionShapes) {
+
+                        if(collisionShape1->testAABBCollision(collisionShape2.get())) {
+                            CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
+
+                            CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
+                            if(collisionData.collided) {
+                                CollisionResponse::collisionResponse(collisionData, m_rigidbodies[i].get(), m_staticbodies[j].get());
+                            }
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
 
 
 }

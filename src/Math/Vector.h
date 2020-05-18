@@ -38,10 +38,10 @@ namespace redPhysics3d {
 		Vector3(const float& x, const float& y, const float& z);
 		Vector3();
 
-		float dot(const Vector3& other);
-		Vector3 cross(const Vector3& other);
-		float magnitude();
-		float magnitudeSquare();
+		float dot(const Vector3& other) const;
+		Vector3 cross(const Vector3& other) const;
+		float magnitude() const;
+		float magnitudeSquare() const;
 		void normalize();
 
 		Vector3 operator+(const Vector3& other) const {
@@ -71,6 +71,22 @@ namespace redPhysics3d {
 			this->x = mat3.at(0, 0) * tx + mat3.at(0, 1) * ty + mat3.at(0, 2) * tz;
 			this->y = mat3.at(1, 0) * tx + mat3.at(1, 1) * ty + mat3.at(1, 2) * tz;
 			this->z = mat3.at(2, 0) * tx + mat3.at(2, 1) * ty + mat3.at(2, 2) * tz;
+
+			return *this;
+		}
+
+		Vector3& operator+=(const Vector3& vec3) {
+			this->x += vec3.x;
+			this->y += vec3.y;
+			this->z += vec3.z;
+
+			return *this;
+		}
+
+		Vector3& operator-=(const Vector3& vec3) {
+			this->x -= vec3.x;
+			this->y -= vec3.y;
+			this->z -= vec3.z;
 
 			return *this;
 		}
