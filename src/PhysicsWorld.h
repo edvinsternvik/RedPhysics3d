@@ -1,6 +1,8 @@
 #pragma once
 #include "Math/Vector.h"
 #include "Collision/CollisionDispatcher.h"
+#include "CollisionBody/RigidBody.h"
+#include "CollisionBody/StaticBody.h"
 
 #include <vector>
 #include <memory>
@@ -11,21 +13,17 @@ namespace redPhysics3d {
     public:
         void stepSimulation(float deltaTime);
 
-        template<class T>
-        T* addCollisionShape() {
-            std::unique_ptr<T> newCollisionShape = std::make_unique<T>();
-            T* newCollisionShapePtr = newCollisionShape.get();
-            m_collisionShapes.push_back(std::move(newCollisionShape));
-            return newCollisionShapePtr;
-        }
-
-        bool removeCollisionShape(CollisionShape* collisionShape);
+        RigidBody* addRigidBody();
+        StaticBody* addStaticBody();
+        void removeRigidBody(RigidBody* rigidbody);
+        void removeStaticBody(StaticBody* staticbody);
         
     public:
         Vector3 gravity;
 
     private:
-        std::vector<std::unique_ptr<CollisionShape>> m_collisionShapes;
+        std::vector<std::unique_ptr<RigidBody>> m_rigidbodies;
+        std::vector<std::unique_ptr<StaticBody>> m_staticbodies;
         CollisionDispatcher m_collisionDispatcher;
     };
 

@@ -3,7 +3,7 @@
 
 namespace redPhysics3d {
 
-    CollisionBox::CollisionBox() : CollisionShape() {
+    CollisionBox::CollisionBox(CollisionBody* collisionBody) : CollisionShape(collisionBody) {
         updateCollisionShape();
     }
 

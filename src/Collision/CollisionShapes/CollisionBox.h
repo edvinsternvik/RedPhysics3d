@@ -6,7 +6,7 @@ namespace redPhysics3d {
 
     class CollisionBox : public CollisionShape {
     public:
-        CollisionBox();
+        CollisionBox(CollisionBody* collisionBody);
 
         virtual CollisionShapeType getShapeType() { return CollisionShapeType::Box; };
 
