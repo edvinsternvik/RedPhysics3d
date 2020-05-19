@@ -7,15 +7,13 @@ namespace redPhysics3d {
         calculateRigidBodyCollisions();
         calculateStaticBodyCollisions();
 
-        // Update velocities
-        // Solve constraints
-        // Update positions
-
         for(auto& rb : m_rigidbodies) {
             Vector3 acceleration = rb->m_externalForce * rb->getInverseMass();
 
             rb->linearVelocity += acceleration * deltaTime;
-            rb->position += rb->linearVelocity * deltaTime;
+            rb->setPosition(rb->getPosition() + rb->linearVelocity * deltaTime);
+
+            rb->setRotation(rb->getRotation() + rb->angularVelocity * deltaTime);
 
             rb->clearForce();
         }

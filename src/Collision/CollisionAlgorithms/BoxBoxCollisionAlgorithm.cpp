@@ -114,17 +114,22 @@ namespace redPhysics3d {
                 getClippedVerticies(vertex1, vertex2, bounds * -1, collisionData);
             }
 
-            // Also store incident face vertecies colliding with the reference shape
-            bounds = referenceShape->getSize();
-            for(Vector3& vertex : incidentVerticies) {
-                if(vertex.y <= 0.0 && vertex.x <= bounds.x && vertex.x >= -bounds.x && vertex.z <= bounds.z && vertex.z >= -bounds.z) {
-                    collisionData.addContactPoint(vertex);
-                }
-            }
-
             // Transform the verticies back into world space
             Matrix3x3 referenceFaceLocalSpaceMatrixInv = referenceFaceLocalSpaceMatrix.inverse();
             for(Vector3& v : collisionData.contactPoints) v = (v * referenceFaceLocalSpaceMatrixInv) - deltaPos + incidentShape->getPosition();
+
+            // Also store incident face vertecies colliding with the reference shape
+            incidentVerticies = incidentShape->getFaceVerticies(incidentFaceIndex);
+            bounds = referenceShape->getSize();
+            for(Vector3& vertex : incidentVerticies) {
+                Vector3 rVertex = vertex + incidentShape->getPosition() - referenceShape->getPosition();
+                rVertex *= referenceShape->getInvertedRotationMatrix();
+                
+                if(rVertex.x < bounds.x && rVertex.x > -bounds.x && rVertex.y < bounds.y && rVertex.y > -bounds.y && rVertex.z < bounds.z && rVertex.z > -bounds.z) {
+                    collisionData.addContactPoint(vertex + incidentShape->getPosition());
+                }
+            }
+
         }
         else {
             // Calculate contact points for edge vs edge collision

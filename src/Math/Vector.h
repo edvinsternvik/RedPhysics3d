@@ -66,6 +66,10 @@ namespace redPhysics3d {
 						   mat3.at(2, 0) * this->x + mat3.at(2, 1) * this->y + mat3.at(2, 2) * this->z);
 		}
 
+		Vector3 operator*(const Vector3& vec3) const {
+			return Vector3(this->x * vec3.x, this->y * vec3.y, this->z * vec3.z);
+		}
+
 		Vector3& operator*=(const Matrix3x3& mat3) {
 			float tx = this->x, ty = this->y, tz = this->z;
 			this->x = mat3.at(0, 0) * tx + mat3.at(0, 1) * ty + mat3.at(0, 2) * tz;

@@ -17,6 +17,11 @@ namespace redPhysics3d {
 
         virtual CollisionBodyType getCollisionBodyType() = 0;
 
+        const Vector3& getPosition() const { return m_position; }
+        const Vector3& getRotation() const { return m_rotation; }
+        void setPosition(const Vector3& position);
+        void setRotation(const Vector3& rotation);
+
         template<class T>
         T* addCollisionShape() {
             std::unique_ptr<T> newCollisionShape = std::make_unique<T>(this);
@@ -28,9 +33,10 @@ namespace redPhysics3d {
         bool removeCollisionShape(CollisionShape* collisionShape);
 
     public:
-        Vector3 position, rotation;
         std::vector<std::unique_ptr<CollisionShape>> collisionShapes;
 
+    private:
+        Vector3 m_position, m_rotation;
     };
 
 }

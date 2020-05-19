@@ -1,6 +1,8 @@
 #include "CollisionShape.h"
 #include "../../CollisionBody/CollisionBody.h"
 
+#define twopi 6.28318530718
+
 namespace redPhysics3d {
 
     CollisionShape::CollisionShape(CollisionBody* collisionBody) : m_collisionBody(collisionBody), m_size(1.0, 1.0, 1.0) {
@@ -26,14 +28,21 @@ namespace redPhysics3d {
     }
 
     Vector3 CollisionShape::getPosition() const {
-        return m_collisionBody->position + m_position;
+        return m_collisionBody->getPosition() + m_position;
     }
     Vector3 CollisionShape::getRotation() const {
-        return m_collisionBody->rotation + m_rotation;
+        return m_collisionBody->getRotation() + m_rotation;
     }
 
     void CollisionShape::setRotation(const Vector3& newRotation) {
         m_rotation = newRotation;
+        if(m_rotation.x > twopi) m_rotation.x -= twopi;
+        if(m_rotation.y > twopi) m_rotation.y -= twopi;
+        if(m_rotation.z > twopi) m_rotation.z -= twopi;
+
+        if(m_rotation.x < twopi) m_rotation.x += twopi;
+        if(m_rotation.y < twopi) m_rotation.y += twopi;
+        if(m_rotation.z < twopi) m_rotation.z += twopi;
         updateCollisionShape();
     }
 
