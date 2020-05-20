@@ -53,11 +53,14 @@ namespace redPhysics3d {
             }
         }
 
-        float movementMultiplier = (b1Dynamic && b2Dynamic) ? 0.5 : 1.0;
         Vector3 depth = collisionData.collider1Normal * collisionData.depth * 1.001;
+        float mass1 = b1Dynamic ? b1Rb->getMass() : 0.0;
+        float mass2 = b2Dynamic ? b2Rb->getMass() : 0.0;
+        float movementMultiplier1 = (b1Dynamic && b2Dynamic) ? mass2 / (mass1 + mass2) : 1.0;
+        float movementMultiplier2 = (b1Dynamic && b2Dynamic) ? mass1 / (mass1 + mass2) : 1.0;
 
-        if(b1Dynamic) b1->setPosition(b1->getPosition() + depth * movementMultiplier * 0.5);
-        if(b2Dynamic) b2->setPosition(b2->getPosition() - depth * movementMultiplier * 0.5);
+        if(b1Dynamic) b1->setPosition(b1->getPosition() + depth * movementMultiplier1);
+        if(b2Dynamic) b2->setPosition(b2->getPosition() - depth * movementMultiplier2);
     }
 
 }
