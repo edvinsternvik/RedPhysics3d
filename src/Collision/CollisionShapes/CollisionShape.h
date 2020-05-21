@@ -32,6 +32,8 @@ namespace redPhysics3d {
         virtual void updateCollisionShape();
         virtual void updateAABBsize() = 0;
 
+        friend class CollisionBody;
+
     public:
         Vector3 AABBmin, AABBmax;
     

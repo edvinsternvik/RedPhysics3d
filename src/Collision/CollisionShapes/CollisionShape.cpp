@@ -40,9 +40,9 @@ namespace redPhysics3d {
         if(m_rotation.y > twopi) m_rotation.y -= twopi;
         if(m_rotation.z > twopi) m_rotation.z -= twopi;
 
-        if(m_rotation.x < twopi) m_rotation.x += twopi;
-        if(m_rotation.y < twopi) m_rotation.y += twopi;
-        if(m_rotation.z < twopi) m_rotation.z += twopi;
+        if(m_rotation.x < -twopi) m_rotation.x += twopi;
+        if(m_rotation.y < -twopi) m_rotation.y += twopi;
+        if(m_rotation.z < -twopi) m_rotation.z += twopi;
         updateCollisionShape();
     }
 

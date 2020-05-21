@@ -125,7 +125,7 @@ namespace redPhysics3d {
                 Vector3 rVertex = vertex + incidentShape->getPosition() - referenceShape->getPosition();
                 rVertex *= referenceShape->getInvertedRotationMatrix();
                 
-                if(rVertex.x < bounds.x && rVertex.x > -bounds.x && rVertex.y < bounds.y && rVertex.y > -bounds.y && rVertex.z < bounds.z && rVertex.z > -bounds.z) {
+                if(rVertex.x <= bounds.x && rVertex.x >= -bounds.x && rVertex.y <= bounds.y && rVertex.y >= -bounds.y && rVertex.z <= bounds.z && rVertex.z >= -bounds.z) {
                     collisionData.addContactPoint(vertex + incidentShape->getPosition());
                 }
             }
