@@ -20,9 +20,9 @@ namespace redPhysics3d {
 
         void clearForce();
         void clearTorque();
+        void updateInertia();
 
     private:
-        void calculateInertia();
 
     public:
         Vector3 linearVelocity, angularVelocity;

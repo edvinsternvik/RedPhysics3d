@@ -4,19 +4,26 @@
 namespace redPhysics3d {
 
     void PhysicsWorld::stepSimulation(float deltaTime) {
-        calculateRigidBodyCollisions();
-        calculateStaticBodyCollisions();
-
+        for(auto& rb : m_rigidbodies) {
+            rb->updateInertia();
+        }
+        
         for(auto& rb : m_rigidbodies) {
             Vector3 acceleration = rb->m_externalForce * rb->getInverseMass();
 
             rb->linearVelocity += acceleration * deltaTime;
             rb->setPosition(rb->getPosition() + rb->linearVelocity * deltaTime);
 
+            Vector3 angularAcceleration = rb->m_externalTorque * rb->getInverseInertia();
+            rb->angularVelocity += angularAcceleration * deltaTime;
             rb->setRotation(rb->getRotation() + rb->angularVelocity * deltaTime);
 
             rb->clearForce();
+            rb->clearTorque();
         }
+
+        calculateRigidBodyCollisions();
+        calculateStaticBodyCollisions();
     }
 
     RigidBody* PhysicsWorld::addRigidBody() {

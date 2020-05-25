@@ -118,7 +118,7 @@ namespace redPhysics3d {
             Matrix3x3 referenceFaceLocalSpaceMatrixInv = referenceFaceLocalSpaceMatrix.inverse();
             for(Vector3& v : collisionData.contactPoints) v = (v * referenceFaceLocalSpaceMatrixInv) - deltaPos + incidentShape->getPosition();
 
-            // Also store incident face vertecies colliding with the reference shape
+            // Store incident face vertecies colliding with the reference shape
             incidentVerticies = incidentShape->getFaceVerticies(incidentFaceIndex);
             bounds = referenceShape->getSize();
             for(Vector3& vertex : incidentVerticies) {
@@ -127,6 +127,18 @@ namespace redPhysics3d {
                 
                 if(rVertex.x <= bounds.x && rVertex.x >= -bounds.x && rVertex.y <= bounds.y && rVertex.y >= -bounds.y && rVertex.z <= bounds.z && rVertex.z >= -bounds.z) {
                     collisionData.addContactPoint(vertex + incidentShape->getPosition());
+                }
+            }
+
+            // Store reference face vertecies colliding with the incident shape
+            std::array<Vector3, 8> referenceVerticies = referenceShape->verticies;
+            bounds = incidentShape->getSize();
+            for(Vector3& vertex : referenceVerticies) {
+                Vector3 rVertex = vertex + referenceShape->getPosition() - incidentShape->getPosition();
+                rVertex *= incidentShape->getInvertedRotationMatrix();
+                
+                if(rVertex.x <= bounds.x && rVertex.x >= -bounds.x && rVertex.y <= bounds.y && rVertex.y >= -bounds.y && rVertex.z <= bounds.z && rVertex.z >= -bounds.z) {
+                    collisionData.addContactPoint(vertex + referenceShape->getPosition());
                 }
             }
 

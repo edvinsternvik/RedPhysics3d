@@ -10,57 +10,44 @@ namespace redPhysics3d {
         RigidBody* b1Rb = b1Dynamic ? (RigidBody*)b1 : nullptr;
         RigidBody* b2Rb = b2Dynamic ? (RigidBody*)b2 : nullptr;
 
-
         Vector3 n = collisionData.collider1Normal;
-        float elasticity = 1.0;
+        float totalInvMass = b1Rb->getInverseMass() + b2Rb->getInverseMass();
 
-        if(collisionData.contactPoints.size() > 0) {
-            Vector3 contactPoint;
-            for(auto& cp : collisionData.contactPoints) {
-                contactPoint += cp;
-            }
-            contactPoint = contactPoint / (float)collisionData.contactPoints.size();
+        float elasticity = 0.50;
 
-            Vector3 r1 = contactPoint - b1->getPosition();
-            Vector3 r2 = contactPoint - b2->getPosition();
+        for(const Vector3& contactPoint : collisionData.contactPoints) { 
 
-            Vector3 v1 = b1Dynamic ? b1Rb->linearVelocity + b1Rb->angularVelocity.cross(r1) : Vector3(0.0,0.0,0.0);
-            Vector3 v2 = b2Dynamic ? b2Rb->linearVelocity + b2Rb->angularVelocity.cross(r2) : Vector3(0.0,0.0,0.0);
+            Vector3 cpRelative1 = contactPoint - b1->getPosition();
+            Vector3 cpRelative2 = contactPoint - b2->getPosition();
 
-            Vector3 dv = v2 - v1;
+            Vector3 angularVelocity1 = b1Rb->angularVelocity.cross(cpRelative1);
+            Vector3 angularVelocity2 = b2Rb->angularVelocity.cross(cpRelative2);
 
-            float invMass1 = b1Dynamic ? b1Rb->getInverseMass() : 0.0;
-            float invMass2 = b2Dynamic ? b2Rb->getInverseMass() : 0.0;
-            Vector3 invInertia1 = b1Dynamic ? b1Rb->getInverseInertia() : Vector3(0.0,0.0,0.0);
-            Vector3 invInertia2 = b2Dynamic ? b2Rb->getInverseInertia() : Vector3(0.0,0.0,0.0);
+            Vector3 velocity1 = (b1Rb->linearVelocity + angularVelocity1);
+            Vector3 velocity2 = (b2Rb->linearVelocity + angularVelocity2);
 
-            float thing = (invMass1 + invMass2) + n.dot((invInertia1 * r1.cross(n)).cross(r1) + (invInertia2 * r2.cross(n)).cross(r2));
+            Vector3 contactVelocity = velocity2 - velocity1;
 
-            if(thing > 0.0) {
-                float jn = -n.dot(dv * (1.0 + elasticity));
-                if(jn > 0.0) jn = 0.0;
-                jn /= thing;
+            float impulseForce = contactVelocity.dot(n);
+            Vector3 inertia1 = (b1Rb->getInverseInertia() * cpRelative1.cross(n)).cross(cpRelative1);
+            Vector3 inertia2 = (b2Rb->getInverseInertia() * cpRelative2.cross(n)).cross(cpRelative2);
 
-                if(b1Dynamic) {
-                    b1Rb->linearVelocity -= n * (jn * invMass1);
-                    b1Rb->angularVelocity -= invInertia1 * r1.cross(n * jn);
-                }
+            float angularEffect = (inertia1.dot(n) + inertia2.dot(n));
 
-                if(b2Dynamic) {
-                    b2Rb->linearVelocity += n * (jn * invMass2);
-                    b2Rb->angularVelocity += invInertia2 * r2.cross(n * jn);
-                }
-            }
+            float j = (-(1.0 + elasticity) * impulseForce) / (totalInvMass + angularEffect);
+
+            Vector3 impulse = n * j;
+
+            b1Rb->linearVelocity -= impulse * b1Rb->getInverseMass();
+            b2Rb->linearVelocity += impulse * b2Rb->getInverseMass();
+
+            b1Rb->angularVelocity += b1Rb->getInverseInertia() * cpRelative1.cross(impulse * -1.0);
+            b2Rb->angularVelocity += b2Rb->getInverseInertia() * cpRelative2.cross(impulse);
         }
 
-        Vector3 depth = collisionData.collider1Normal * collisionData.depth * 1.001;
-        float mass1 = b1Dynamic ? b1Rb->getMass() : 0.0;
-        float mass2 = b2Dynamic ? b2Rb->getMass() : 0.0;
-        float movementMultiplier1 = (b1Dynamic && b2Dynamic) ? mass2 / (mass1 + mass2) : 1.0;
-        float movementMultiplier2 = (b1Dynamic && b2Dynamic) ? mass1 / (mass1 + mass2) : 1.0;
-
-        if(b1Dynamic) b1->setPosition(b1->getPosition() + depth * movementMultiplier1);
-        if(b2Dynamic) b2->setPosition(b2->getPosition() - depth * movementMultiplier2);
+        Vector3 depth = n * collisionData.depth * 1.01;
+        if(b1Dynamic) b1->setPosition(b1->getPosition() + depth * (b1Rb->getInverseMass() / totalInvMass));
+        if(b2Dynamic) b2->setPosition(b2->getPosition() - depth * (b2Rb->getInverseMass() / totalInvMass));
     }
 
 }

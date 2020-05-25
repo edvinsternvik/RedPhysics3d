@@ -1,5 +1,7 @@
 #include "RigidBody.h"
 
+#include <cmath>
+
 namespace redPhysics3d {
 
     RigidBody::RigidBody() {
@@ -12,7 +14,7 @@ namespace redPhysics3d {
         if(mass != m_mass) m_inverseMass = 1.0 / mass;
         m_mass = mass;
 
-        calculateInertia();
+        updateInertia();
     }
 
     void RigidBody::addForce(const Vector3& force) {
@@ -31,12 +33,14 @@ namespace redPhysics3d {
         m_externalTorque = Vector3(0,0,0);
     }
 
-    void RigidBody::calculateInertia() {
+    void RigidBody::updateInertia() {
+        if(collisionShapes.size() < 1) {
+            return;
+        }
+
         // 0,0833333333333 = 1 / 12
-        float widthSquare = 1.0, heightSqure = 1.0, lengthSquare = 1.0;
-        m_inertia.x = 0.0833333333333 * m_mass * (heightSqure + widthSquare);
-        m_inertia.y = 0.0833333333333 * m_mass * (lengthSquare + widthSquare);
-        m_inertia.z = 0.0833333333333 * m_mass * (heightSqure + lengthSquare);
+        float widthSquare = std::pow(collisionShapes[0]->getSize().x * 2.0, 2), heightSqure = std::pow(collisionShapes[0]->getSize().y * 2.0, 2), lengthSquare = std::pow(collisionShapes[0]->getSize().z * 2.0, 2);
+        m_inertia = Vector3(0.0833333333333 * m_mass * (heightSqure + lengthSquare), 0.0833333333333 * m_mass * (lengthSquare + widthSquare), 0.0833333333333 * m_mass * (heightSqure + widthSquare));
 
         m_inverseInertia.x = 1.0 / m_inertia.x;
         m_inverseInertia.y = 1.0 / m_inertia.y;
