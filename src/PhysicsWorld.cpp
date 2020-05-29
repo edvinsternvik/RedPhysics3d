@@ -1,25 +1,23 @@
 #include "PhysicsWorld.h"
 #include "Response/CollisionResponse.h"
 
+#include "Math/Matrix3x3.h"
+#include "Math/Quaternion.h"
+
 namespace redPhysics3d {
 
     void PhysicsWorld::stepSimulation(float deltaTime) {
         for(auto& rb : m_rigidbodies) {
+            rb->updateRotationMatricies();
             rb->updateInertia();
+
+            rb->integrate(deltaTime);
         }
-        
+
         for(auto& rb : m_rigidbodies) {
-            Vector3 acceleration = rb->m_externalForce * rb->getInverseMass();
-
-            rb->linearVelocity += acceleration * deltaTime;
-            rb->setPosition(rb->getPosition() + rb->linearVelocity * deltaTime);
-
-            Vector3 angularAcceleration = rb->m_externalTorque * rb->getInverseInertia();
-            rb->angularVelocity += angularAcceleration * deltaTime;
-            rb->setRotation(rb->getRotation() + rb->angularVelocity * deltaTime);
-
-            rb->clearForce();
-            rb->clearTorque();
+            for(auto& cs : rb->collisionShapes) {
+                cs->updateCollisionShape();
+            }
         }
 
         calculateRigidBodyCollisions();

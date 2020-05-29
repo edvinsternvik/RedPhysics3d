@@ -13,11 +13,11 @@ namespace redPhysics3d {
 
     }
 
-    float Matrix3x3::det() {
+    float Matrix3x3::det() const {
         return at(0,0) * (at(1,1)*at(2,2) - at(1,2)*at(2,1)) - at(0,1) * (at(1,0)*at(2,2) - at(1,2)*at(2,0)) + at(0,2) * (at(1,0)*at(2,1) - at(1,1)*at(2,0));
     }
 
-    Matrix3x3 Matrix3x3::inverse() {
+    Matrix3x3 Matrix3x3::inverse() const {
         float invdet = 1.0 / det();
 
         return Matrix3x3(
@@ -32,6 +32,14 @@ namespace redPhysics3d {
             (at(0, 0) * at(1, 1) - at(1, 0) * at(0, 1)) * invdet);
     }
 
+    Matrix3x3 Matrix3x3::transpose() const {
+        return Matrix3x3(
+              at(0,0), at(1,0), at(2,0),
+              at(0,1), at(1,1), at(2,1),
+              at(0,2), at(1,2), at(2,2)
+        );
+    }
+
     Matrix3x3 Matrix3x3::getRotationMatrixX(const float& rotationX) {
         return Matrix3x3(1.0, 0.0, 0.0,  0.0, std::cos(rotationX), -std::sin(rotationX),    0.0, std::sin(rotationX), std::cos(rotationX));
     }
@@ -44,9 +52,9 @@ namespace redPhysics3d {
         return Matrix3x3(std::cos(rotationZ), -std::sin(rotationZ), 0.0,    std::sin(rotationZ), std::cos(rotationZ), 0.0,   0.0, 0.0, 1.0);
     }
 
-    Matrix3x3 Matrix3x3::getRotationMatrix(const Vector3& rotation) {
-        return getRotationMatrixX(rotation.x) * getRotationMatrixY(rotation.y) * getRotationMatrixZ(rotation.z);
-    }
+    // Matrix3x3 Matrix3x3::getRotationMatrix(const Vector3& rotation) {
+    //     return getRotationMatrixZ(rotation.z) * getRotationMatrixY(rotation.y) * getRotationMatrixX(rotation.x);
+    // }
 
 
 }

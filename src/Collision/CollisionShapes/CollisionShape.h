@@ -1,5 +1,6 @@
 #pragma once
 #include "../../Math/Vector.h"
+#include "../../Math/Quaternion.h"
 
 namespace redPhysics3d {
 
@@ -22,23 +23,19 @@ namespace redPhysics3d {
         virtual bool testCollision(const CollisionShape* const o) = 0;
 
         Vector3 getPosition() const;
-        Vector3 getRotation() const;
-        const Vector3& getSize() const { return m_size; }
-        virtual void setPosition(const Vector3& newPosition) { m_position = newPosition; }
-        virtual void setRotation(const Vector3& newRotation);
-        virtual void setSize(const Vector3& newSize);
-
-    private:
+        Quaternion getOrientation() const;
+        Matrix3x3& getRotationMatrix();
+        Matrix3x3& getInvertedRotationMatrix();
         virtual void updateCollisionShape();
+
+    protected:
         virtual void updateAABBsize() = 0;
 
         friend class CollisionBody;
 
     public:
         Vector3 AABBmin, AABBmax;
-    
-    protected:
-        Vector3 m_position, m_rotation, m_size;
+        Vector3 size;
 
     private:
         CollisionBody* m_collisionBody;

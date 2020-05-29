@@ -1,5 +1,6 @@
 #pragma once
 #include "../Math/Vector.h"
+#include "../Math/Quaternion.h"
 #include "../Collision/CollisionShapes/CollisionShape.h"
 
 #include <memory>
@@ -17,11 +18,6 @@ namespace redPhysics3d {
 
         virtual CollisionBodyType getCollisionBodyType() = 0;
 
-        const Vector3& getPosition() const { return m_position; }
-        const Vector3& getRotation() const { return m_rotation; }
-        void setPosition(const Vector3& position);
-        void setRotation(const Vector3& rotation);
-
         template<class T>
         T* addCollisionShape() {
             std::unique_ptr<T> newCollisionShape = std::make_unique<T>(this);
@@ -32,11 +28,14 @@ namespace redPhysics3d {
 
         bool removeCollisionShape(CollisionShape* collisionShape);
 
+        void updateRotationMatricies();
+
     public:
         std::vector<std::unique_ptr<CollisionShape>> collisionShapes;
+        Quaternion orientation;
+        Vector3 position;
 
-    private:
-        Vector3 m_position, m_rotation;
+        Matrix3x3 rotationMatrix, invertedRotationMatrix;
     };
 
 }
