@@ -63,7 +63,8 @@ namespace redPhysics3d {
 
                             CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
                             if(collisionData.collided) {
-                                CollisionResponse::collisionResponse(collisionData, m_rigidbodies[i].get(), m_rigidbodies[j].get());
+                                CollisionResponse collisionResponse(collisionData, m_rigidbodies[i].get(), m_rigidbodies[j].get());
+                                collisionResponse.solveCollision();
                             }
                         }
 
@@ -84,7 +85,8 @@ namespace redPhysics3d {
 
                             CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
                             if(collisionData.collided) {
-                                CollisionResponse::collisionResponse(collisionData, m_rigidbodies[i].get(), m_staticbodies[j].get());
+                                CollisionResponse collisionResponse(collisionData, m_rigidbodies[i].get(), m_staticbodies[j].get());
+                                collisionResponse.solveCollision();
                             }
                         }
 
