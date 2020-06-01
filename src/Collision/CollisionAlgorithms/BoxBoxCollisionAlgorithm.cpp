@@ -125,7 +125,7 @@ namespace redPhysics3d {
             bool incidentVerticiesColliding = false;
             bounds = referenceShape->size;
             for(Vector3& vertex : incidentVerticies) {
-                if(vertex.y <= 0.0 && vertex.x <= bounds.x && vertex.x >= -bounds.x && vertex.z <= bounds.z && vertex.z >= -bounds.z) {
+                if(vertex.y <= 0.0 && vertex.y >= -bounds.y * 2 && vertex.x <= bounds.x && vertex.x >= -bounds.x && vertex.z <= bounds.z && vertex.z >= -bounds.z) {
                     // Transform vertex into world space
                     Vector3 vertexWorld = (referenceFaceLocalSpaceMatrixInv * vertex) - deltaPos + incidentShape->getPosition();
 
@@ -166,16 +166,17 @@ namespace redPhysics3d {
                         }
                         if(!exist) {
                             // Calculate penetration
-                            if(collisionData.collider1Normal.x < 0.0) bounds.x = -bounds.x;
-                            if(collisionData.collider1Normal.y < 0.0) bounds.y = -bounds.y;
-                            if(collisionData.collider1Normal.z < 0.0) bounds.z = -bounds.z;
+                            Vector3 normal = referenceShape->getInvertedRotationMatrix() * collisionData.collider1Normal;
+                            if(normal.x < 0.0) bounds.x = -bounds.x;
+                            if(normal.y < 0.0) bounds.y = -bounds.y;
+                            if(normal.z < 0.0) bounds.z = -bounds.z;
 
-                            float dx = (bounds.x - rVertex.x) / collisionData.collider1Normal.x;
-                            float dy = (bounds.y - rVertex.y) / collisionData.collider1Normal.y;
-                            float dz = (bounds.z - rVertex.z) / collisionData.collider1Normal.z;
+                            float dx = (bounds.x - rVertex.x) / normal.x;
+                            float dy = (bounds.y - rVertex.y) / normal.y;
+                            float dz = (bounds.z - rVertex.z) / normal.z;
                             float penetration = std::min(dx, std::min(dy, dz));
 
-                            collisionData.addContactPoint(contactPointWorld, penetration);
+                            collisionData.addContactPoint(contactPointWorld, collisionData.depth);
                         }
                     }
                 }
@@ -219,7 +220,6 @@ namespace redPhysics3d {
                     }
                 }
             }
-
             collisionData.addContactPoint(smallestV, penetrationDepth);
         }
 

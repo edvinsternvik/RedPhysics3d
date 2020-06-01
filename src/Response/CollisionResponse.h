@@ -7,16 +7,17 @@ namespace redPhysics3d {
 
     class CollisionResponse {
     public:
-        CollisionResponse(const CollisionData& collisionData, CollisionBody* b1, CollisionBody* b2);
+        CollisionResponse(CollisionData collisionData, CollisionBody* b1, CollisionBody* b2);
         
         void solveCollision();
 
     private:
-        void resolveContact(const Vector3& contactPoint);
+        void resolveContact(Contact& contact, Vector3 linearMoveChange[2], Vector3 angularMoveChange[2]);
+        void updatePenetrations(Vector3 linearMoveChange[2], Vector3 angularMoveChange[2]);
         void applyImpulses();
 
     private:
-        const CollisionData& m_collisionData;
+        CollisionData m_collisionData;
         CollisionBody* m_b1, *m_b2;
         RigidBody* m_rigidbodies[2];
         bool m_b2Dynamic;

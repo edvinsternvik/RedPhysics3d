@@ -6,7 +6,7 @@
 
 namespace redPhysics3d {
 
-    CollisionResponse::CollisionResponse(const CollisionData& collisionData, CollisionBody* b1, CollisionBody* b2) : m_collisionData(collisionData), m_b1(b1), m_b2(b2) {
+    CollisionResponse::CollisionResponse(CollisionData collisionData, CollisionBody* b1, CollisionBody* b2) : m_collisionData(collisionData), m_b1(b1), m_b2(b2) {
         m_b2Dynamic = m_b2->getCollisionBodyType() == CollisionBodyType::Dynamic;
         m_rigidbodies[0] = (RigidBody*)m_b1;
         m_rigidbodies[1] = m_b2Dynamic ? (RigidBody*)m_b2 : nullptr;
@@ -14,21 +14,29 @@ namespace redPhysics3d {
 
     void CollisionResponse::solveCollision() {
         // Resolve interpenetration using nonlinear projection
-        for(const Contact& contact : m_collisionData.contacts) {
-            resolveContact(contact.contactPoint);
+        for(int i = 0; i < 5; ++i) {
+            Contact* worstContact = nullptr;
+            for(Contact& contact : m_collisionData.contacts) {
+                if(worstContact == nullptr || contact.penetration > worstContact->penetration && contact.penetration > 0.0) worstContact = &contact;
+            }
+            if(worstContact == nullptr) break;
+
+            Vector3 linearMove[2], angularMove[2];
+            resolveContact(*worstContact, linearMove, angularMove);
+            updatePenetrations(linearMove, angularMove);
         }
 
         // Change velocities
         applyImpulses();
     }
 
-    void CollisionResponse::resolveContact(const Vector3& contactPoint) {
+    void CollisionResponse::resolveContact(Contact& contact, Vector3 linearMoveChange[2], Vector3 angularMoveChange[2]) {
         float linearMove[2] = {0.0, 0.0}, angularMove[2] = {0.0, 0.0};
         float totalInertia = 0.0, linearInertia[2] = {0.0, 0.0}, angularInertia[2] = {0.0,0.0};
         Vector3 rotationPerMove[2];
         for(int i = 0; i < 2; ++i) {
             if(m_rigidbodies[i] != nullptr) {
-                Vector3 contactRelative = contactPoint - m_rigidbodies[i]->position;
+                Vector3 contactRelative = contact.contactPoint - m_rigidbodies[i]->position;
 
                 Vector3 impulsePerMove = contactRelative.cross(m_collisionData.collider1Normal);
                 impulsePerMove = m_rigidbodies[i]->inverseInertiaWorld * impulsePerMove;
@@ -44,16 +52,16 @@ namespace redPhysics3d {
         }
         float inverseInertia = 1.0 / totalInertia;
 
-        linearMove[0] = m_collisionData.depth * linearInertia[0] * inverseInertia;
-        linearMove[1] = -m_collisionData.depth * linearInertia[1] * inverseInertia;
-        angularMove[0] = m_collisionData.depth * angularInertia[0] * inverseInertia;
-        angularMove[1] = -m_collisionData.depth * angularInertia[1] * inverseInertia;
+        linearMove[0] = contact.penetration * linearInertia[0] * inverseInertia;
+        linearMove[1] = -contact.penetration * linearInertia[1] * inverseInertia;
+        angularMove[0] = contact.penetration * angularInertia[0] * inverseInertia;
+        angularMove[1] = -contact.penetration * angularInertia[1] * inverseInertia;
 
         // Limit rotation
         float limitConstant = 0.2;
         for(int i = 0; i < 2; ++i) {
             if(m_rigidbodies[i] != nullptr) {
-                Vector3 contactRelative = contactPoint - m_rigidbodies[i]->position;
+                Vector3 contactRelative = contact.contactPoint - m_rigidbodies[i]->position;
                 float limit = limitConstant * contactRelative.magnitude();
 
                 float totalMove = angularMove[i] + linearMove[i];
@@ -65,11 +73,31 @@ namespace redPhysics3d {
         }
 
         // Adjust positions and orientations
-        m_rigidbodies[0]->position += m_collisionData.collider1Normal * linearMove[0];
-        if(m_b2Dynamic) m_rigidbodies[1]->position += m_collisionData.collider1Normal * linearMove[1];
+        linearMoveChange[0] = m_collisionData.collider1Normal * linearMove[0];
+        m_rigidbodies[0]->position += linearMoveChange[0];
+        if(m_b2Dynamic) {
+            linearMoveChange[1] = m_collisionData.collider1Normal * linearMove[1];
+            m_rigidbodies[1]->position += linearMoveChange[1];
+        }
 
-        m_rigidbodies[0]->orientation.addScaledVector(rotationPerMove[0] * angularMove[0], 1.0);
-        if(m_b2Dynamic) m_rigidbodies[1]->orientation.addScaledVector(rotationPerMove[1] * angularMove[1], 1.0);
+        angularMoveChange[0] = rotationPerMove[0] * angularMove[0];
+        m_rigidbodies[0]->orientation.addScaledVector(angularMoveChange[0], 1.0);
+        if(m_b2Dynamic) {
+            angularMoveChange[1] = rotationPerMove[1] * angularMove[1];
+            m_rigidbodies[1]->orientation.addScaledVector(angularMoveChange[1], 1.0);
+        }
+    }
+
+    void CollisionResponse::updatePenetrations(Vector3 linearMoveChange[2], Vector3 angularMoveChange[2]) {
+        for(Contact& contact : m_collisionData.contacts) {
+            for(int i = 0; i < 2; ++i) {
+                if(m_rigidbodies[i]) {
+                    Vector3 contactRelative = contact.contactPoint - m_rigidbodies[i]->position;
+                    Vector3 deltaPosition = angularMoveChange[i].cross(contactRelative) + linearMoveChange[i];
+                    contact.penetration += deltaPosition.dot(m_collisionData.collider1Normal) * (i == 1 ? 1.0 : -1.0);
+                }
+            }
+        }
     }
 
     void CollisionResponse::applyImpulses() {
