@@ -4,19 +4,29 @@
 
 namespace redPhysics3d {
 
+    class Contact {
+    public:
+        Contact(const Vector3& point, const float& penetration) : contactPoint(point), penetration(penetration) {
+
+        }
+
+        Vector3 contactPoint;
+        float penetration;
+    };
+
     class CollisionData {
     public:
         CollisionData(bool collided, CollisionShape* collider1, CollisionShape* collider2);
 
         void setCollisionData(const Vector3& collider1Normal, const float& depth);
-        void addContactPoint(const Vector3& point);
+        void addContactPoint(const Vector3& point, const float& penetration);
 
     public:
         bool collided;
         CollisionShape* collider1, *collider2;
         Vector3 collider1Normal;
         float depth;
-        std::vector<Vector3> contactPoints;
+        std::vector<Contact> contacts;
     };
 
 }

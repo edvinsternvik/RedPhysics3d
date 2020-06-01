@@ -12,8 +12,8 @@ namespace redPhysics3d {
         this->depth = depth;
     }
 
-    void CollisionData::addContactPoint(const Vector3& point) {
-        contactPoints.push_back(point);
+    void CollisionData::addContactPoint(const Vector3& point, const float& penetration) {
+        contacts.push_back(Contact(point, penetration));
     }
 
 

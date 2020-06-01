@@ -14,8 +14,8 @@ namespace redPhysics3d {
 
     void CollisionResponse::solveCollision() {
         // Resolve interpenetration using nonlinear projection
-        for(const Vector3& contactPoint : m_collisionData.contactPoints) {
-            resolveContact(contactPoint);
+        for(const Contact& contact : m_collisionData.contacts) {
+            resolveContact(contact.contactPoint);
         }
 
         // Change velocities
@@ -78,9 +78,9 @@ namespace redPhysics3d {
 
         Vector3 velocityChange1, velocityChange2, angularVelocityChange1, angularVelocityChange2;
 
-        for(const Vector3& contactPoint : m_collisionData.contactPoints) {
-            Vector3 r1 = contactPoint - m_b1->position;
-            Vector3 r2 = contactPoint - m_b2->position;
+        for(const Contact& contact : m_collisionData.contacts) {
+            Vector3 r1 = contact.contactPoint - m_b1->position;
+            Vector3 r2 = contact.contactPoint - m_b2->position;
 
             Vector3 closingVelocity = (m_rigidbodies[0]->linearVelocity + m_rigidbodies[0]->angularVelocity.cross(r1)) * -1.0;
 

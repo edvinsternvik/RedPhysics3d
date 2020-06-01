@@ -56,7 +56,9 @@ namespace redPhysics3d {
             if(std::abs(axesSeparationDepths[i]) < std::abs(axesSeparationDepths[depthIndex])) depthIndex = i;
         }
 
-        collisionData.setCollisionData(axes[depthIndex], axesSeparationDepths[depthIndex]);
+        float referenceFaceSignMultiplier = axesSeparationDepths[depthIndex] < 0.0 ? -1.0 : 1.0;
+        float penetrationDepth = std::abs(axesSeparationDepths[depthIndex]);
+        collisionData.setCollisionData(axes[depthIndex] * referenceFaceSignMultiplier, penetrationDepth);
 
         bool isFaceAxis = depthIndex < 6;
         if(isFaceAxis) {
@@ -64,7 +66,7 @@ namespace redPhysics3d {
 
             bool isBox1Reference = depthIndex < 3;
 
-            Vector3 referenceFaceNormal = axes[depthIndex] * sgn(axesSeparationDepths[depthIndex]) * (isBox1Reference ? -1 : 1);
+            Vector3 referenceFaceNormal = axes[depthIndex] * referenceFaceSignMultiplier * (isBox1Reference ? -1 : 1);
             CollisionBox* referenceShape = isBox1Reference ? box1 : box2; // Reference shape is the shape that has a colliding face
             CollisionBox* incidentShape =  isBox1Reference ? box2 : box1; // Incident shape is the other shape
 
@@ -86,11 +88,11 @@ namespace redPhysics3d {
             // Calculate a rotation matrix that rotates all points to local reference face space, where the reference face normal points up
             Matrix3x3 referenceShapeRotateUpMatrix(1,0,0, 0,1,0, 0,0,1);
             Vector3 localReferenceFaceNormal = referenceShape->getInvertedRotationMatrix() * referenceFaceNormal;
-            if(localReferenceFaceNormal.x > 0.9) referenceShapeRotateUpMatrix *= Matrix3x3::getRotationMatrixZ(hpi);
-            else if(localReferenceFaceNormal.x < -0.9) referenceShapeRotateUpMatrix *= Matrix3x3::getRotationMatrixZ(-hpi);
-            else if(localReferenceFaceNormal.y < -0.9) referenceShapeRotateUpMatrix *= Matrix3x3::getRotationMatrixZ(2 * hpi);
-            else if(localReferenceFaceNormal.z >  0.9) referenceShapeRotateUpMatrix *= Matrix3x3::getRotationMatrixX(-hpi);
-            else if(localReferenceFaceNormal.z < -0.9) referenceShapeRotateUpMatrix *= Matrix3x3::getRotationMatrixX(hpi);
+            if(localReferenceFaceNormal.x > 0.9) referenceShapeRotateUpMatrix = Matrix3x3::getRotationMatrixZ(hpi);
+            else if(localReferenceFaceNormal.x < -0.9) referenceShapeRotateUpMatrix = Matrix3x3::getRotationMatrixZ(-hpi);
+            else if(localReferenceFaceNormal.y < -0.9) referenceShapeRotateUpMatrix = Matrix3x3::getRotationMatrixZ(2 * hpi);
+            else if(localReferenceFaceNormal.z >  0.9) referenceShapeRotateUpMatrix = Matrix3x3::getRotationMatrixX(-hpi);
+            else if(localReferenceFaceNormal.z < -0.9) referenceShapeRotateUpMatrix = Matrix3x3::getRotationMatrixX(hpi);
             Matrix3x3 referenceFaceLocalSpaceMatrix = referenceShapeRotateUpMatrix * referenceShape->getInvertedRotationMatrix();
             localReferenceFaceNormal = referenceFaceLocalSpaceMatrix * referenceFaceNormal;
 
@@ -117,47 +119,65 @@ namespace redPhysics3d {
 
             // Transform the verticies back into world space
             Matrix3x3 referenceFaceLocalSpaceMatrixInv = referenceFaceLocalSpaceMatrix.inverse();
-            for(Vector3& v : collisionData.contactPoints) v = (referenceFaceLocalSpaceMatrixInv * v) - deltaPos + incidentShape->getPosition();
+            for(auto& v : collisionData.contacts) v.contactPoint = (referenceFaceLocalSpaceMatrixInv * v.contactPoint) - deltaPos + incidentShape->getPosition();
 
             // Store incident face vertecies colliding with the reference shape
-            incidentVerticies = incidentShape->getFaceVerticies(incidentFaceIndex);
+            bool incidentVerticiesColliding = false;
             bounds = referenceShape->size;
             for(Vector3& vertex : incidentVerticies) {
-                Vector3 rVertex = vertex + incidentShape->getPosition() - referenceShape->getPosition();
-                rVertex = referenceShape->getInvertedRotationMatrix() * rVertex;
-                
-                if(rVertex.x <= bounds.x && rVertex.x >= -bounds.x && rVertex.y <= bounds.y && rVertex.y >= -bounds.y && rVertex.z <= bounds.z && rVertex.z >= -bounds.z) {
-                    // Add contact point if it has not already been found
-                    bool exist = false;
-                    Vector3 contactPointWorld = vertex + incidentShape->getPosition();
-                    for(int i = 0; i < collisionData.contactPoints.size(); ++i) {
-                        if((contactPointWorld - collisionData.contactPoints[i]).magnitudeSquare() < 0.001) {
-                            exist = true;
-                            break;
-                        }
-                    }
-                    if(!exist) collisionData.addContactPoint(contactPointWorld);
-                }
-            }
+                if(vertex.y <= 0.0 && vertex.x <= bounds.x && vertex.x >= -bounds.x && vertex.z <= bounds.z && vertex.z >= -bounds.z) {
+                    // Transform vertex into world space
+                    Vector3 vertexWorld = (referenceFaceLocalSpaceMatrixInv * vertex) - deltaPos + incidentShape->getPosition();
 
-            // Store reference face vertecies colliding with the incident shape
-            std::array<Vector3, 8> referenceVerticies = referenceShape->verticies;
-            bounds = incidentShape->size;
-            for(Vector3& vertex : referenceVerticies) {
-                Vector3 rVertex = vertex + referenceShape->getPosition() - incidentShape->getPosition();
-                rVertex = incidentShape->getInvertedRotationMatrix() * rVertex;
-                
-                if(rVertex.x <= bounds.x && rVertex.x >= -bounds.x && rVertex.y <= bounds.y && rVertex.y >= -bounds.y && rVertex.z <= bounds.z && rVertex.z >= -bounds.z) {
-                    // Add contact point if it has not already been found
-                    bool exist = false;
-                    Vector3 contactPointWorld = vertex + referenceShape->getPosition();
-                    for(int i = 0; i < collisionData.contactPoints.size(); ++i) {
-                        if((contactPointWorld - collisionData.contactPoints[i]).magnitudeSquare() < 0.001) {
-                            exist = true;
+                    // Check if contact already exists
+                    bool exists = false;
+                    for(int i = 0; i < collisionData.contacts.size(); ++i) {
+                        if((vertexWorld - collisionData.contacts[i].contactPoint).magnitudeSquare() < 0.001) {
+                            exists = true;
                             break;
                         }
                     }
-                    if(!exist) collisionData.addContactPoint(contactPointWorld);
+
+                    // Add contact if it doesn't already exist
+                    if(!exists) {
+                        collisionData.addContactPoint(vertexWorld, -vertex.y);
+                        incidentVerticiesColliding = true;
+                    }
+                }
+            }          
+
+            if(incidentVerticiesColliding) {
+                // Store reference face vertecies colliding with the incident shape
+                std::array<Vector3, 8> referenceVerticies = referenceShape->verticies;
+                bounds = incidentShape->size;
+                for(Vector3& vertex : referenceVerticies) {
+                    Vector3 rVertex = vertex + referenceShape->getPosition() - incidentShape->getPosition();
+                    rVertex = incidentShape->getInvertedRotationMatrix() * rVertex;
+                    
+                    if(rVertex.x <= bounds.x && rVertex.x >= -bounds.x && rVertex.y <= bounds.y && rVertex.y >= -bounds.y && rVertex.z <= bounds.z && rVertex.z >= -bounds.z) {
+                        // Check if contact already exists
+                        bool exist = false;
+                        Vector3 contactPointWorld = vertex + referenceShape->getPosition();
+                        for(int i = 0; i < collisionData.contacts.size(); ++i) {
+                            if((contactPointWorld - collisionData.contacts[i].contactPoint).magnitudeSquare() < 0.001) {
+                                exist = true;
+                                break;
+                            }
+                        }
+                        if(!exist) {
+                            // Calculate penetration
+                            if(collisionData.collider1Normal.x < 0.0) bounds.x = -bounds.x;
+                            if(collisionData.collider1Normal.y < 0.0) bounds.y = -bounds.y;
+                            if(collisionData.collider1Normal.z < 0.0) bounds.z = -bounds.z;
+
+                            float dx = (bounds.x - rVertex.x) / collisionData.collider1Normal.x;
+                            float dy = (bounds.y - rVertex.y) / collisionData.collider1Normal.y;
+                            float dz = (bounds.z - rVertex.z) / collisionData.collider1Normal.z;
+                            float penetration = std::min(dx, std::min(dy, dz));
+
+                            collisionData.addContactPoint(contactPointWorld, penetration);
+                        }
+                    }
                 }
             }
 
@@ -200,7 +220,7 @@ namespace redPhysics3d {
                 }
             }
 
-            collisionData.addContactPoint(smallestV);
+            collisionData.addContactPoint(smallestV, penetrationDepth);
         }
 
         return collisionData;
@@ -231,7 +251,7 @@ namespace redPhysics3d {
             float newX = bounds.x;
             Vector3 clippedVertex(newX, newX * dyDx + vertex2.y - vertex2.x * dyDx, newX * dzDx + vertex2.z - vertex2.x * dzDx);
             if(clippedVertex.y <= 0.0 && std::abs(clippedVertex.z) <= std::abs(bounds.z)) {
-                collisionData.addContactPoint(clippedVertex);
+                collisionData.addContactPoint(clippedVertex, -clippedVertex.y);
             }
         }
 
@@ -242,7 +262,7 @@ namespace redPhysics3d {
             float newZ = bounds.z;
             Vector3 clippedVertex(newZ * dxDz + vertex2.x - vertex2.z * dxDz, newZ * dyDz + vertex2.y - vertex2.z * dyDz, newZ);
             if(clippedVertex.y <= 0.0 && std::abs(clippedVertex.x) <= std::abs(bounds.x)) {
-                collisionData.addContactPoint(clippedVertex);
+                collisionData.addContactPoint(clippedVertex, -clippedVertex.y);
             }
         }
     }
