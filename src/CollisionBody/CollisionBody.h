@@ -16,7 +16,7 @@ namespace redPhysics3d {
     public:
         CollisionBody();
 
-        virtual CollisionBodyType getCollisionBodyType() = 0;
+        virtual CollisionBodyType getCollisionBodyType() const = 0;
 
         template<class T>
         T* addCollisionShape() {

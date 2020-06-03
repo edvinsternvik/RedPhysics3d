@@ -7,7 +7,7 @@ namespace redPhysics3d {
     public:
         StaticBody();
 
-        virtual CollisionBodyType getCollisionBodyType() { return CollisionBodyType::Static; }
+        virtual CollisionBodyType getCollisionBodyType() const { return CollisionBodyType::Static; }
 
     public:
         

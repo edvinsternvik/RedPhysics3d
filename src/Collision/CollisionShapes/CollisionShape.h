@@ -26,6 +26,7 @@ namespace redPhysics3d {
         Quaternion getOrientation() const;
         Matrix3x3& getRotationMatrix();
         Matrix3x3& getInvertedRotationMatrix();
+        CollisionBody* getCollisionBody() const { return m_collisionBody; }
         virtual void updateCollisionShape();
 
     protected:

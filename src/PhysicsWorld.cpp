@@ -1,5 +1,5 @@
 #include "PhysicsWorld.h"
-#include "Response/CollisionResponse.h"
+#include "Response/CollisionResolver.h"
 
 #include "Math/Matrix3x3.h"
 #include "Math/Quaternion.h"
@@ -20,8 +20,12 @@ namespace redPhysics3d {
             }
         }
 
-        calculateRigidBodyCollisions();
-        calculateStaticBodyCollisions();
+        CollisionData collisionData;
+        generateRigidBodyContacts(collisionData);
+        generateStaticBodyContacts(collisionData);
+
+        CollisionResolver collisionResolver(collisionData);
+        collisionResolver.solveCollision(collisionData.contacts.size() * 4);
     }
 
     RigidBody* PhysicsWorld::addRigidBody() {
@@ -52,7 +56,7 @@ namespace redPhysics3d {
         }
     }
 
-    void PhysicsWorld::calculateRigidBodyCollisions() {
+    void PhysicsWorld::generateRigidBodyContacts(CollisionData& collisionData) {
         for(int i = 0; i < m_rigidbodies.size(); ++i) {
             for(int j = i + 1; j < m_rigidbodies.size(); ++j) {
                 for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
@@ -61,11 +65,7 @@ namespace redPhysics3d {
                         if(collisionShape1->testAABBCollision(collisionShape2.get())) {
                             CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
 
-                            CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
-                            if(collisionData.collided) {
-                                CollisionResponse collisionResponse(collisionData, m_rigidbodies[i].get(), m_rigidbodies[j].get());
-                                collisionResponse.solveCollision();
-                            }
+                            collisionTestAlgorithm->generateContacts(collisionData, collisionShape1.get(), collisionShape2.get());
                         }
 
                     }
@@ -74,7 +74,7 @@ namespace redPhysics3d {
         }
     }
 
-    void PhysicsWorld::calculateStaticBodyCollisions() {
+    void PhysicsWorld::generateStaticBodyContacts(CollisionData& collisionData) {
         for(int i = 0; i < m_rigidbodies.size(); ++i) {
             for(int j = 0; j < m_staticbodies.size(); ++j) {
                 for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
@@ -83,11 +83,7 @@ namespace redPhysics3d {
                         if(collisionShape1->testAABBCollision(collisionShape2.get())) {
                             CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
 
-                            CollisionData collisionData = collisionTestAlgorithm->testCollision(collisionShape1.get(), collisionShape2.get());
-                            if(collisionData.collided) {
-                                CollisionResponse collisionResponse(collisionData, m_rigidbodies[i].get(), m_staticbodies[j].get());
-                                collisionResponse.solveCollision();
-                            }
+                            collisionTestAlgorithm->generateContacts(collisionData, collisionShape1.get(), collisionShape2.get());
                         }
 
                     }
@@ -95,7 +91,5 @@ namespace redPhysics3d {
             }
         }
     }
-
-
 
 }

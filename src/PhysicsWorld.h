@@ -9,6 +9,8 @@
 
 namespace redPhysics3d {
 
+    class CollisionData;
+
     class PhysicsWorld {
     public:
         void stepSimulation(float deltaTime);
@@ -19,8 +21,8 @@ namespace redPhysics3d {
         void removeStaticBody(StaticBody* staticbody);
 
     private:
-        void calculateRigidBodyCollisions();
-        void calculateStaticBodyCollisions();
+        void generateRigidBodyContacts(CollisionData& collisionData);
+        void generateStaticBodyContacts(CollisionData& collisionData);
         
     public:
         Vector3 gravity;

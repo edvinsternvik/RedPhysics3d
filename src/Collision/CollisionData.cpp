@@ -2,18 +2,11 @@
 
 namespace redPhysics3d {
 
-    CollisionData::CollisionData(bool collided, CollisionShape* collider1, CollisionShape* collider2)
-        : collided(collided), collider1(collider1), collider2(collider2) {
+    CollisionData::CollisionData() {
     }
 
-    void CollisionData::setCollisionData(const Vector3& collider1Normal, const float& depth) {
-        this->collided = true;
-        this->collider1Normal = collider1Normal;
-        this->depth = depth;
-    }
-
-    void CollisionData::addContactPoint(const Vector3& point, const float& penetration) {
-        contacts.push_back(Contact(point, penetration));
+    void CollisionData::addContactPoint(CollisionShape* collider1, CollisionShape* collider2, const Vector3& point, const Vector3& collider1Normal, const float& penetration) {
+        contacts.push_back(Contact(collider1, collider2, point, collider1Normal, penetration));
     }
 
 

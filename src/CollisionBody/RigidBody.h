@@ -7,7 +7,7 @@ namespace redPhysics3d {
     public:
         RigidBody();
 
-        virtual CollisionBodyType getCollisionBodyType() { return CollisionBodyType::Dynamic; }
+        virtual CollisionBodyType getCollisionBodyType() const { return CollisionBodyType::Dynamic; }
 
         void integrate(float deltaTime);
 

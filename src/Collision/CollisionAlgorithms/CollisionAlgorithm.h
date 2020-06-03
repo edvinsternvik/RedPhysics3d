@@ -6,11 +6,11 @@ namespace redPhysics3d {
 
     class CollisionAlgorithm {
     public:
-        virtual CollisionData testCollision(CollisionShape* shape1, CollisionShape* shape2) = 0;
+        virtual bool generateContacts(CollisionData& collisionData, CollisionShape* shape1, CollisionShape* shape2) = 0;
     };
 
     class BoxBoxCollisionAlgorithm : public CollisionAlgorithm {
-        virtual CollisionData testCollision(CollisionShape* shape1, CollisionShape* shape2);
+        virtual bool generateContacts(CollisionData& collisionData, CollisionShape* shape1, CollisionShape* shape2);
     };
 
 }

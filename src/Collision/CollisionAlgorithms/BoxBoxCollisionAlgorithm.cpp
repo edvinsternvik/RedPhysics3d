@@ -10,9 +10,9 @@
 namespace redPhysics3d {
 
     void getMinMax(CollisionBox* cb, Vector3& axis, float& min, float& max);
-    void getClippedVerticies(const Vector3& vertex1, const Vector3& vertex2, const Vector3& bounds, CollisionData& collisionData);
+    void getClippedVerticies(const Vector3& vertex1, const Vector3& vertex2, const Vector3& bounds, std::vector<Vector3>& contacts);
 
-    CollisionData BoxBoxCollisionAlgorithm::testCollision(CollisionShape* shape1, CollisionShape* shape2) {
+    bool BoxBoxCollisionAlgorithm::generateContacts(CollisionData& collisionData, CollisionShape* shape1, CollisionShape* shape2) {
         CollisionBox* box1 = (CollisionBox*)shape1, *box2 = (CollisionBox*)shape2;
         
         std::vector<float> axesSeparationDepths;
@@ -33,8 +33,6 @@ namespace redPhysics3d {
             }
         }
 
-        CollisionData collisionData(false, shape1, shape2);
-
         for(int i = 0; i < axes.size(); ++i) {
             // Get the bounds of the shapes when projected onto the axis
             float min1, max1, min2, max2;
@@ -42,7 +40,7 @@ namespace redPhysics3d {
             getMinMax(box2, axes[i], min2, max2);
 
             // Found a separating axis -> no collision
-            if(min1 > max2 || min2 > max1) return collisionData;  
+            if(min1 > max2 || min2 > max1) return false;
 
             float smallest = std::abs(min2 - max1) < std::abs(max2 - min1) ? min2 - max1 : max2 - min1;
             axesSeparationDepths.push_back(smallest);
@@ -58,9 +56,10 @@ namespace redPhysics3d {
 
         float referenceFaceSignMultiplier = axesSeparationDepths[depthIndex] < 0.0 ? -1.0 : 1.0;
         float penetrationDepth = std::abs(axesSeparationDepths[depthIndex]);
-        collisionData.setCollisionData(axes[depthIndex] * referenceFaceSignMultiplier, penetrationDepth);
+        Vector3 collisionNormal = axes[depthIndex] * referenceFaceSignMultiplier;
 
         bool isFaceAxis = depthIndex < 6;
+        unsigned int foundContacts = 0;
         if(isFaceAxis) {
             // Calculate face vs face, face vs edge and face vs vertex contact points
 
@@ -109,17 +108,22 @@ namespace redPhysics3d {
 
             // Iterate over the edges in the incident face and store points that intersect the reference face side planes
             Vector3 bounds = referenceShapeRotateUpMatrix * referenceShape->size;
+            std::vector<Vector3> clippedContacts;
             for(int i = 0; i < 4; ++i) {
                 Vector3& vertex1 = incidentVerticies[i];
                 Vector3& vertex2 = incidentVerticies[(i + 1) % 4];
                 
-                getClippedVerticies(vertex1, vertex2, bounds, collisionData);
-                getClippedVerticies(vertex1, vertex2, bounds * -1, collisionData);
+                getClippedVerticies(vertex1, vertex2, bounds, clippedContacts);
+                getClippedVerticies(vertex1, vertex2, bounds * -1, clippedContacts);
             }
 
             // Transform the verticies back into world space
             Matrix3x3 referenceFaceLocalSpaceMatrixInv = referenceFaceLocalSpaceMatrix.inverse();
-            for(auto& v : collisionData.contacts) v.contactPoint = (referenceFaceLocalSpaceMatrixInv * v.contactPoint) - deltaPos + incidentShape->getPosition();
+            for(Vector3& v : clippedContacts) {
+                Vector3 contactPoint = (referenceFaceLocalSpaceMatrixInv * v) - deltaPos + incidentShape->getPosition();
+                collisionData.addContactPoint(shape1, shape2, contactPoint, collisionNormal, -v.y);
+                foundContacts++;
+            }
 
             // Store incident face vertecies colliding with the reference shape
             bool incidentVerticiesColliding = false;
@@ -131,8 +135,8 @@ namespace redPhysics3d {
 
                     // Check if contact already exists
                     bool exists = false;
-                    for(int i = 0; i < collisionData.contacts.size(); ++i) {
-                        if((vertexWorld - collisionData.contacts[i].contactPoint).magnitudeSquare() < 0.001) {
+                    for(int i = 0; i < foundContacts; ++i) {
+                        if((vertexWorld - collisionData.contacts[collisionData.contacts.size() - 1 - i].contactPoint).magnitudeSquare() < 0.001) {
                             exists = true;
                             break;
                         }
@@ -140,8 +144,9 @@ namespace redPhysics3d {
 
                     // Add contact if it doesn't already exist
                     if(!exists) {
-                        collisionData.addContactPoint(vertexWorld, -vertex.y);
+                        collisionData.addContactPoint(shape1, shape2, vertexWorld, collisionNormal, -vertex.y);
                         incidentVerticiesColliding = true;
+                        foundContacts++;
                     }
                 }
             }          
@@ -158,15 +163,15 @@ namespace redPhysics3d {
                         // Check if contact already exists
                         bool exist = false;
                         Vector3 contactPointWorld = vertex + referenceShape->getPosition();
-                        for(int i = 0; i < collisionData.contacts.size(); ++i) {
-                            if((contactPointWorld - collisionData.contacts[i].contactPoint).magnitudeSquare() < 0.001) {
+                        for(int i = 0; i < foundContacts; ++i) {
+                            if((contactPointWorld - collisionData.contacts[collisionData.contacts.size() - 1 - i].contactPoint).magnitudeSquare() < 0.001) {
                                 exist = true;
                                 break;
                             }
                         }
                         if(!exist) {
                             // Calculate penetration
-                            Vector3 normal = referenceShape->getInvertedRotationMatrix() * collisionData.collider1Normal;
+                            Vector3 normal = referenceShape->getInvertedRotationMatrix() * collisionNormal;
                             if(normal.x < 0.0) bounds.x = -bounds.x;
                             if(normal.y < 0.0) bounds.y = -bounds.y;
                             if(normal.z < 0.0) bounds.z = -bounds.z;
@@ -176,7 +181,8 @@ namespace redPhysics3d {
                             float dz = (bounds.z - rVertex.z) / normal.z;
                             float penetration = std::min(dx, std::min(dy, dz));
 
-                            collisionData.addContactPoint(contactPointWorld, collisionData.depth);
+                            collisionData.addContactPoint(shape1, shape2, contactPointWorld, collisionNormal, penetrationDepth);
+                            foundContacts++;
                         }
                     }
                 }
@@ -220,10 +226,11 @@ namespace redPhysics3d {
                     }
                 }
             }
-            collisionData.addContactPoint(smallestV, penetrationDepth);
+            collisionData.addContactPoint(shape1, shape2, smallestV, collisionNormal, penetrationDepth);
+            foundContacts++;
         }
 
-        return collisionData;
+        return true;
     }
     
     // Projects the collisionbox's verticies onto the axis and returns the minimum and maximum lengths
@@ -241,7 +248,7 @@ namespace redPhysics3d {
     }
 
     // 
-    void getClippedVerticies(const Vector3& vertex1, const Vector3& vertex2, const Vector3& bounds, CollisionData& collisionData) {
+    void getClippedVerticies(const Vector3& vertex1, const Vector3& vertex2, const Vector3& bounds, std::vector<Vector3>& contacts) {
         Vector3 deltaEdge = vertex1 - vertex2;
 
         if((vertex1.x < bounds.x && vertex2.x > bounds.x) || (vertex1.x > bounds.x && vertex2.x < bounds.x)) {
@@ -251,7 +258,7 @@ namespace redPhysics3d {
             float newX = bounds.x;
             Vector3 clippedVertex(newX, newX * dyDx + vertex2.y - vertex2.x * dyDx, newX * dzDx + vertex2.z - vertex2.x * dzDx);
             if(clippedVertex.y <= 0.0 && std::abs(clippedVertex.z) <= std::abs(bounds.z)) {
-                collisionData.addContactPoint(clippedVertex, -clippedVertex.y);
+                contacts.push_back(clippedVertex);
             }
         }
 
@@ -262,7 +269,7 @@ namespace redPhysics3d {
             float newZ = bounds.z;
             Vector3 clippedVertex(newZ * dxDz + vertex2.x - vertex2.z * dxDz, newZ * dyDz + vertex2.y - vertex2.z * dyDz, newZ);
             if(clippedVertex.y <= 0.0 && std::abs(clippedVertex.x) <= std::abs(bounds.x)) {
-                collisionData.addContactPoint(clippedVertex, -clippedVertex.y);
+                contacts.push_back(clippedVertex);
             }
         }
     }
