@@ -11,10 +11,6 @@ namespace redPhysics3d {
 
     void CollisionResolver::solveCollision(unsigned int iterations) {
         // Resolve interpenetration using nonlinear projection
-        if(m_collisionData.contacts.size() > 0) {
-            int epic = 3;
-        }
-        
         for(int i = 0; i < iterations; ++i) {
             Contact* worstContact = nullptr;
             for(Contact& contact : m_collisionData.contacts) {
@@ -110,7 +106,6 @@ namespace redPhysics3d {
 
     void CollisionResolver::applyImpulses() {
         float elasticity = 0.3;
-
 
         for(const Contact& contact : m_collisionData.contacts) {
             Vector3 velocityChange1, velocityChange2, angularVelocityChange1, angularVelocityChange2;
