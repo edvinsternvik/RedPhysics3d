@@ -6,6 +6,14 @@
 
 namespace redPhysics3d {
 
+    Vector3 max(const Vector3& vec1, const Vector3& vec2) {
+        return Vector3(std::max(vec1.x, vec2.x), std::max(vec1.y, vec2.y), std::max(vec1.z, vec2.z));
+    }
+
+    Vector3 min(const Vector3& vec1, const Vector3& vec2) {
+        return Vector3(std::min(vec1.x, vec2.x), std::min(vec1.y, vec2.y), std::min(vec1.z, vec2.z));
+    }
+
     // Calculates the closest points on two lines by finding the points p and q, where pq is perpendicular to edge1 and edge2
     bool computeClosestPointBetweenEdges(const Vector3& edge1PointA, const Vector3& edge1PointB, const Vector3& edge2PointA, const Vector3& edge2PointB, Vector3& closestPointEdge1, Vector3& closestPointEdge2) {
         Vector3 edge1 = edge1PointB - edge1PointA;
