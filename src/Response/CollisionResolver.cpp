@@ -10,13 +10,22 @@ namespace redPhysics3d {
     }
 
     void CollisionResolver::solveCollision(unsigned int iterations) {
+        // Make sure the colliders are in the correct order
+        for(auto& a : m_collisionData.contacts) {
+            if(a.collider1Normal.dot(a.colliders[0]->getPosition() - a.colliders[1]->getPosition()) < 0.0) {
+                auto* temp = a.colliders[0];
+                a.colliders[0] = a.colliders[1];
+                a.colliders[1] = temp;
+            }
+        }
+
         // Resolve interpenetration using nonlinear projection
         for(int i = 0; i < iterations; ++i) {
             Contact* worstContact = nullptr;
             for(Contact& contact : m_collisionData.contacts) {
-                if(worstContact == nullptr || contact.penetration > worstContact->penetration && contact.penetration > 0.0) worstContact = &contact;
+                if(worstContact == nullptr || (contact.penetration > worstContact->penetration && contact.penetration > 0.0)) worstContact = &contact;
             }
-            if(worstContact == nullptr) break;
+            if(worstContact == nullptr || worstContact->penetration < 0.0) break;
 
             Vector3 linearMove[2] = {Vector3(), Vector3()}, angularMove[2] = {Vector3(), Vector3()};
             resolveContact(*worstContact, linearMove, angularMove);
