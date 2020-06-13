@@ -10,15 +10,6 @@ namespace redPhysics3d {
     }
 
     void CollisionResolver::solveCollision(unsigned int iterations) {
-        // Make sure the colliders are in the correct order
-        for(auto& a : m_collisionData.contacts) {
-            if(a.collider1Normal.dot(a.colliders[0]->getPosition() - a.colliders[1]->getPosition()) < 0.0) {
-                auto* temp = a.colliders[0];
-                a.colliders[0] = a.colliders[1];
-                a.colliders[1] = temp;
-            }
-        }
-
         // Resolve interpenetration using nonlinear projection
         for(int i = 0; i < iterations; ++i) {
             Contact* worstContact = nullptr;
