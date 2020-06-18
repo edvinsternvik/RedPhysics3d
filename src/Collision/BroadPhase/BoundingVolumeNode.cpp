@@ -1,5 +1,6 @@
 #include "BoundingVolumeNode.h"
 #include "../../Math/Etc.h"
+#include "../../CollisionBody/CollisionBody.h"
 
 namespace redPhysics3d {
 
@@ -54,7 +55,9 @@ namespace redPhysics3d {
         }
 
         if(isLeaf() && other->isLeaf()) {
-            potentialCollisions.push_back(PotentialCollision(collisionBody, other->collisionBody));
+            if(collisionBody->getCollisionBodyType() == CollisionBodyType::Dynamic || other->collisionBody->getCollisionBodyType() == CollisionBodyType::Dynamic) {
+                potentialCollisions.push_back(PotentialCollision(collisionBody, other->collisionBody));
+            }
             return;
         }
 
