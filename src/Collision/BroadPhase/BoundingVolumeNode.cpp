@@ -19,6 +19,8 @@ namespace redPhysics3d {
             parent->collisionBody = sibling->collisionBody;
             parent->children[0] = sibling->children[0];
             parent->children[1] = sibling->children[1];
+            if(parent->children[0]) parent->children[0]->parent = parent;
+            if(parent->children[1]) parent->children[1]->parent = parent;
 
             sibling->parent = nullptr;
             sibling->collisionBody = nullptr;
@@ -71,11 +73,11 @@ namespace redPhysics3d {
         }
     }
 
-    void BoundingVolumeNode::insert(CollisionBody* newBody, const BoundingVolume& newVolume) {
+    BoundingVolumeNode* BoundingVolumeNode::insert(CollisionBody* newBody, const BoundingVolume& newVolume) {
         if(isLeaf() && collisionBody == nullptr) {
             collisionBody = newBody;
             boundingVolume = newVolume;
-            return;
+            return this;
         }
 
         if(isLeaf()) {
@@ -85,14 +87,14 @@ namespace redPhysics3d {
             children[1]->parent = this;
             collisionBody = nullptr;
             calculateBoundingVolume();
+            return children[1];
+        }
+        
+        if(children[0]->boundingVolume.getGrowth(newVolume) > children[1]->boundingVolume.getGrowth(newVolume)) {
+            return children[1]->insert(newBody, newVolume);
         }
         else {
-            if(children[0]->boundingVolume.getGrowth(newVolume) > children[1]->boundingVolume.getGrowth(newVolume)) {
-                children[1]->insert(newBody, newVolume);
-            }
-            else {
-                children[0]->insert(newBody, newVolume);
-            }
+            return children[0]->insert(newBody, newVolume);
         }
     }
 
@@ -109,6 +111,5 @@ namespace redPhysics3d {
 
         if(parent) parent->calculateBoundingVolume();
     }
-
 
 }

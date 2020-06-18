@@ -3,6 +3,7 @@
 #include "Collision/CollisionDispatcher.h"
 #include "CollisionBody/RigidBody.h"
 #include "CollisionBody/StaticBody.h"
+#include "Collision/BroadPhase/BoundingVolumeTree.h"
 
 #include <vector>
 #include <memory>
@@ -13,6 +14,9 @@ namespace redPhysics3d {
 
     class PhysicsWorld {
     public:
+        PhysicsWorld();
+
+        void init();
         void stepSimulation(float deltaTime);
 
         RigidBody* addRigidBody();
@@ -21,8 +25,7 @@ namespace redPhysics3d {
         void removeStaticBody(StaticBody* staticbody);
 
     private:
-        void generateRigidBodyContacts(CollisionData& collisionData);
-        void generateStaticBodyContacts(CollisionData& collisionData);
+        void generateContacts(CollisionData& collisionData);
         
     public:
         Vector3 gravity;
@@ -31,6 +34,7 @@ namespace redPhysics3d {
         std::vector<std::unique_ptr<RigidBody>> m_rigidbodies;
         std::vector<std::unique_ptr<StaticBody>> m_staticbodies;
         CollisionDispatcher m_collisionDispatcher;
+        BoundingVolumeTree m_boundingVolumeTree;
     };
 
 }

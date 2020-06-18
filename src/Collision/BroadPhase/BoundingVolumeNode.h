@@ -22,7 +22,7 @@ namespace redPhysics3d {
         void getPotentialCollisions(std::vector<PotentialCollision>& potentialCollisions) const;
 
         inline bool isLeaf() const { return children[0] == nullptr && children[1] == nullptr; }
-        void insert(CollisionBody* newBody, const BoundingVolume& newVolume);
+        BoundingVolumeNode* insert(CollisionBody* newBody, const BoundingVolume& newVolume);
 
     private:
         void calculateBoundingVolume();

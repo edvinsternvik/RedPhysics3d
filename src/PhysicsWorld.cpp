@@ -6,6 +6,16 @@
 
 namespace redPhysics3d {
 
+    PhysicsWorld::PhysicsWorld() {
+    }
+
+    void PhysicsWorld::init() {
+        for(int i = 0; i < m_rigidbodies.size(); ++i)
+            m_boundingVolumeTree.insert(m_rigidbodies[i].get());
+        for(int i = 0; i < m_staticbodies.size(); ++i)
+            m_boundingVolumeTree.insert(m_staticbodies[i].get());
+    }
+
     void PhysicsWorld::stepSimulation(float deltaTime) {
         for(auto& rb : m_rigidbodies) {
             rb->updateRotationMatricies();
@@ -21,8 +31,8 @@ namespace redPhysics3d {
         }
 
         CollisionData collisionData;
-        generateRigidBodyContacts(collisionData);
-        generateStaticBodyContacts(collisionData);
+
+        generateContacts(collisionData);
 
         CollisionResolver collisionResolver(collisionData);
         collisionResolver.solveCollision(collisionData.contacts.size() * 4);
@@ -56,37 +66,20 @@ namespace redPhysics3d {
         }
     }
 
-    void PhysicsWorld::generateRigidBodyContacts(CollisionData& collisionData) {
+    void PhysicsWorld::generateContacts(CollisionData& collisionData) {
+        std::vector<PotentialCollision> pCollisions;
+
         for(int i = 0; i < m_rigidbodies.size(); ++i) {
-            for(int j = i + 1; j < m_rigidbodies.size(); ++j) {
-                for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
-                    for(auto& collisionShape2 : m_rigidbodies[j]->collisionShapes) {
-
-                        if(collisionShape1->testAABBCollision(collisionShape2.get())) {
-                            CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
-
-                            collisionTestAlgorithm->generateContacts(collisionData, collisionShape1.get(), collisionShape2.get());
-                        }
-
-                    }
-                }
-            }
+            m_boundingVolumeTree.update(m_rigidbodies[i].get());
         }
-    }
+        m_boundingVolumeTree.getPotentialCollisions(pCollisions);
 
-    void PhysicsWorld::generateStaticBodyContacts(CollisionData& collisionData) {
-        for(int i = 0; i < m_rigidbodies.size(); ++i) {
-            for(int j = 0; j < m_staticbodies.size(); ++j) {
-                for(auto& collisionShape1 : m_rigidbodies[i]->collisionShapes) {
-                    for(auto& collisionShape2 : m_staticbodies[j]->collisionShapes) {
+        for(const auto& pc : pCollisions) {
+            for(auto& collisionShape1 : pc.bodies[0]->collisionShapes) {
+                for(auto& collisionShape2 : pc.bodies[1]->collisionShapes) {
+                    CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
 
-                        if(collisionShape1->testAABBCollision(collisionShape2.get())) {
-                            CollisionAlgorithm* collisionTestAlgorithm = m_collisionDispatcher.getCollisionAlgorithm(collisionShape1->getShapeType(), collisionShape2->getShapeType());
-
-                            collisionTestAlgorithm->generateContacts(collisionData, collisionShape1.get(), collisionShape2.get());
-                        }
-
-                    }
+                    collisionTestAlgorithm->generateContacts(collisionData, collisionShape1.get(), collisionShape2.get());
                 }
             }
         }
