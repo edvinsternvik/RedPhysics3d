@@ -8,8 +8,12 @@ namespace redPhysics3d {
 
     }
 
-    BoundingVolume::BoundingVolume(CollisionBody* collisionBody) : position(collisionBody->position) {
-        calculate(collisionBody);
+    BoundingVolume::BoundingVolume(CollisionBody* collisionBody) {
+        if(collisionBody != nullptr) {
+            position = collisionBody->position;
+            calculate(collisionBody);
+        }
+
     }
 
     void BoundingVolume::calculate(CollisionBody* collisionBody) {

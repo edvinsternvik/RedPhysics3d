@@ -69,6 +69,12 @@ namespace redPhysics3d {
     }
 
     void BoundingVolumeNode::insert(CollisionBody* newBody, const BoundingVolume& newVolume) {
+        if(isLeaf() && collisionBody == nullptr) {
+            collisionBody = newBody;
+            boundingVolume = newVolume;
+            return;
+        }
+
         if(isLeaf()) {
             children[0] = new BoundingVolumeNode(collisionBody, boundingVolume);
             children[1] = new BoundingVolumeNode(newBody, newVolume);
