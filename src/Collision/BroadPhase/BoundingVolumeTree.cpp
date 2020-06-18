@@ -6,6 +6,10 @@ namespace redPhysics3d {
         m_startNode = new BoundingVolumeNode(nullptr);
     }
 
+    BoundingVolumeTree::~BoundingVolumeTree() {
+        delete m_startNode;
+    }
+
     void BoundingVolumeTree::getPotentialCollisions(std::vector<PotentialCollision>& potentialCollisions) {
         if(m_startNode) m_startNode->getPotentialCollisions(potentialCollisions);
     }
@@ -41,6 +45,9 @@ namespace redPhysics3d {
             if(search != m_nodeMap.end()) {
                 search->second = parent;
             }
+        }
+        else if(search->second == m_startNode) {
+            m_startNode = new BoundingVolumeNode(nullptr);
         }
     }
 

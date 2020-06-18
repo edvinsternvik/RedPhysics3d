@@ -10,6 +10,7 @@ namespace redPhysics3d {
     class BoundingVolumeTree {
     public:
         BoundingVolumeTree();
+        ~BoundingVolumeTree();
 
         void getPotentialCollisions(std::vector<PotentialCollision>& potentialCollisions);
 
