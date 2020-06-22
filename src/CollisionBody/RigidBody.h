@@ -23,18 +23,17 @@ namespace redPhysics3d {
         void clearTorque();
         void updateInertia();
 
-    private:
-
     public:
         Vector3 linearVelocity, angularVelocity;
         Matrix3x3 inertia, inverseInertia;
         Matrix3x3 inverseInertiaWorld;
-        float damping = 0.995;
+        float gravityScale = 1.0;
 
     private:
         Vector3 m_externalForce, m_externalTorque;
         float m_mass = 1.0, m_elasticity, m_inverseMass = 1.0;
 
+        float damping = 0.995;
         friend class PhysicsWorld;
     };
 

@@ -28,7 +28,7 @@ namespace redPhysics3d {
         void generateContacts(CollisionData& collisionData);
         
     public:
-        Vector3 gravity;
+        Vector3 gravity = Vector3(0.0, -9.82, 0.0);
 
     private:
         std::vector<std::unique_ptr<RigidBody>> m_rigidbodies;

@@ -18,6 +18,8 @@ namespace redPhysics3d {
 
     void PhysicsWorld::stepSimulation(float deltaTime) {
         for(auto& rb : m_rigidbodies) {
+            rb->linearVelocity += gravity * rb->gravityScale * deltaTime;
+
             rb->updateRotationMatricies();
             rb->updateInertia();
 
