@@ -30,16 +30,16 @@ namespace redPhysics3d {
     }
 
     Vector3 CollisionShape::getPosition() const {
-        return m_collisionBody->position;
+        return m_collisionBody->position + localPosition;
         }
     Quaternion CollisionShape::getOrientation() const {
-        return m_collisionBody->orientation;
+        return m_collisionBody->orientation * localOrientation;
         }
-    Matrix3x3& CollisionShape::getRotationMatrix() {
-        return m_collisionBody->rotationMatrix;
+    Matrix3x3 CollisionShape::getRotationMatrix() const {
+        return getOrientation().calculateRotationMatrix();
     }
-    Matrix3x3& CollisionShape::getInvertedRotationMatrix() {
-        return m_collisionBody->invertedRotationMatrix;
-        }
+    Matrix3x3 CollisionShape::getInvertedRotationMatrix() const {
+        return getOrientation().calculateRotationMatrix().transpose();
+    }
 
 }

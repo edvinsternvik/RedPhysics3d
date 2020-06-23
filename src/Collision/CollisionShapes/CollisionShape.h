@@ -24,8 +24,8 @@ namespace redPhysics3d {
 
         Vector3 getPosition() const;
         Quaternion getOrientation() const;
-        Matrix3x3& getRotationMatrix();
-        Matrix3x3& getInvertedRotationMatrix();
+        Matrix3x3 getRotationMatrix() const;
+        Matrix3x3 getInvertedRotationMatrix() const;
         CollisionBody* getCollisionBody() const { return m_collisionBody; }
         virtual void updateCollisionShape();
 
@@ -36,7 +36,8 @@ namespace redPhysics3d {
 
     public:
         Vector3 AABBmin, AABBmax;
-        Vector3 size;
+        Vector3 localPosition, size;
+        Quaternion localOrientation;
 
     private:
         CollisionBody* m_collisionBody;
