@@ -95,9 +95,13 @@ namespace redPhysics3d {
     void CollisionResolver::updatePenetrations(CollisionBody* body1, CollisionBody* body2, Vector3 linearMoveChange[2], Vector3 angularMoveChange[2]) {
         for(Contact& contact : m_collisionData.contacts) {
             for(int i = 0; i < 2; ++i) {
-                if(contact.colliders[i]->getCollisionBody() == body1 || contact.colliders[i]->getCollisionBody() == body2) {
+                int index = -1;
+                if(contact.colliders[i]->getCollisionBody() == body1) index = 0;
+                else if(contact.colliders[i]->getCollisionBody() == body2) index = 1;
+
+                if(index > -1) {
                     Vector3 contactRelative = contact.contactPoint - contact.colliders[i]->getCollisionBody()->position;
-                    Vector3 deltaPosition = angularMoveChange[i].cross(contactRelative) + linearMoveChange[i];
+                    Vector3 deltaPosition = angularMoveChange[index].cross(contactRelative) + linearMoveChange[index];
                     contact.penetration += deltaPosition.dot(contact.collider1Normal) * (i == 1 ? 1.0 : -1.0);
                 }
             }
