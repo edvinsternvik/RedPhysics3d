@@ -2,6 +2,8 @@
 #include "../../CollisionBody/CollisionBody.h"
 #include "../../Math/Etc.h"
 
+#include <algorithm>
+
 namespace redPhysics3d {
 
     BoundingVolume::BoundingVolume(const Vector3& position, const Vector3& halfSize) : position(position), halfSize(halfSize) {

@@ -1,8 +1,11 @@
 #pragma once
-#include <cmath>
-#include <ostream>
 #include "Vector.h"
 #include "Matrix3x3.h"
+
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <cmath>
+#include <ostream>
 
 namespace redPhysics3d {
 

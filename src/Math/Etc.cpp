@@ -1,8 +1,6 @@
 #include "Etc.h"
 #include <cmath>
-#include <bits/stdc++.h> 
-
-#include <iostream>
+#include <algorithm>
 
 namespace redPhysics3d {
 
