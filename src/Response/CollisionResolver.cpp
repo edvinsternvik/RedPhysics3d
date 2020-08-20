@@ -58,16 +58,21 @@ namespace redPhysics3d {
         angularMove[0] = contact.penetration * angularInertia[0] * inverseInertia;
         angularMove[1] = -contact.penetration * angularInertia[1] * inverseInertia;
 
-        // Limit rotation
+        // Limit or lock rotation
         float limitConstant = 0.2;
         for(int i = 0; i < 2; ++i) {
             if(rigidbodies[i] != nullptr) {
-                Vector3 contactRelative = contact.contactPoint - rigidbodies[i]->position;
-                float limit = limitConstant * contactRelative.magnitude();
-
                 float totalMove = angularMove[i] + linearMove[i];
-                if(std::abs(angularMove[i]) > limit) {
-                    angularMove[i] = angularMove[i] < 0.0 ? -limit : limit;
+                if(rigidbodies[i]->lockRotation) {
+                    angularMove[i] = 0.0;
+                }
+                else {
+                    Vector3 contactRelative = contact.contactPoint - rigidbodies[i]->position;
+                    float limit = limitConstant * contactRelative.magnitude();
+
+                    if(std::abs(angularMove[i]) > limit) {
+                        angularMove[i] = angularMove[i] < 0.0 ? -limit : limit;
+                    }
                 }
                 linearMove[i] = totalMove - angularMove[i];
             }
@@ -156,12 +161,12 @@ namespace redPhysics3d {
 
             if(rigidbodies[0]) {
                 rigidbodies[0]->linearVelocity += velocityChange1;
-                rigidbodies[0]->angularVelocity += angularVelocityChange1;
+                if(!rigidbodies[0]->lockRotation) rigidbodies[0]->angularVelocity += angularVelocityChange1;
             }
 
             if(rigidbodies[1]) {
                 rigidbodies[1]->linearVelocity += velocityChange2;
-                rigidbodies[1]->angularVelocity += angularVelocityChange2;
+                if(!rigidbodies[1]->lockRotation) rigidbodies[1]->angularVelocity += angularVelocityChange2;
             }
         }
 
