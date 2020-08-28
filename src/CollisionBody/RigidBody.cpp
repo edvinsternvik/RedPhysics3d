@@ -9,7 +9,7 @@ namespace redPhysics3d {
     }
 
     void RigidBody::integrate(float deltaTime) {
-        Vector3 acceleration = m_externalForce * getInverseMass();
+        acceleration = m_externalForce * getInverseMass();
 
         Vector3 angularAcceleration = inverseInertiaWorld * m_externalTorque;
 

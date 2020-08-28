@@ -29,6 +29,7 @@ namespace redPhysics3d {
         Matrix3x3 inverseInertiaWorld;
         float gravityScale = 1.0;
         bool lockRotation = false;
+        Vector3 acceleration;
 
     private:
         Vector3 m_externalForce, m_externalTorque;

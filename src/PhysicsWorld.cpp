@@ -18,7 +18,7 @@ namespace redPhysics3d {
 
     void PhysicsWorld::stepSimulation(float deltaTime) {
         for(auto& rb : m_rigidbodies) {
-            rb->linearVelocity += gravity * rb->gravityScale * deltaTime;
+            rb->addForce(gravity * rb->gravityScale * rb->getMass());
 
             rb->updateRotationMatricies();
             rb->updateInertia();
@@ -37,7 +37,7 @@ namespace redPhysics3d {
         generateContacts(collisionData);
 
         CollisionResolver collisionResolver(collisionData);
-        collisionResolver.solveCollision(collisionData.contacts.size() * 4);
+        collisionResolver.solveCollision(collisionData.contacts.size() * 4, deltaTime);
     }
 
     RigidBody* PhysicsWorld::addRigidBody() {

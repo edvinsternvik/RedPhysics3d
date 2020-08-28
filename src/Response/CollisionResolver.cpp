@@ -9,7 +9,7 @@ namespace redPhysics3d {
     CollisionResolver::CollisionResolver(CollisionData& collisionData) : m_collisionData(collisionData) {
     }
 
-    void CollisionResolver::solveCollision(unsigned int iterations) {
+    void CollisionResolver::solveCollision(unsigned int iterations, float deltaTime) {
         // Resolve interpenetration using nonlinear projection
         for(int i = 0; i < iterations; ++i) {
             Contact* worstContact = nullptr;
@@ -24,7 +24,7 @@ namespace redPhysics3d {
         }
 
         // Change velocities
-        applyImpulses();
+        applyImpulses(deltaTime);
     }
 
     void CollisionResolver::resolveContact(Contact& contact, Vector3 linearMoveChange[2], Vector3 angularMoveChange[2]) {
@@ -113,7 +113,7 @@ namespace redPhysics3d {
         }
     }
 
-    void CollisionResolver::applyImpulses() {
+    void CollisionResolver::applyImpulses(float deltaTime) {
         for(const Contact& contact : m_collisionData.contacts) {
             Vector3 velocityChange1, velocityChange2, angularVelocityChange1, angularVelocityChange2;
 
@@ -145,8 +145,14 @@ namespace redPhysics3d {
             }
 
             float elasticity = (contact.colliders[0]->getCollisionBody()->elasticity + contact.colliders[1]->getCollisionBody()->elasticity) * 0.5;
+            float deltaVelFromAcceleration = 0.0;
+            if(rigidbodies[0]) deltaVelFromAcceleration += rigidbodies[0]->acceleration.dot(n) * deltaTime;
+            if(rigidbodies[1]) deltaVelFromAcceleration -= rigidbodies[1]->acceleration.dot(n) * deltaTime;
 
-            float cn = (-1 - elasticity) * closingVelocity.dot(n);
+            float closingVelocityAlongNormal = closingVelocity.dot(n);
+            if(std::abs(closingVelocityAlongNormal) < 0.25) elasticity = 0.0;
+
+            float cn = -closingVelocityAlongNormal - elasticity * (closingVelocityAlongNormal - deltaVelFromAcceleration);
             Vector3 impulse = n * (cn / deltaVelocity);
 
             if(rigidbodies[0]) {
