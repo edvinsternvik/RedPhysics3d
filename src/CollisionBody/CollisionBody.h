@@ -34,6 +34,7 @@ namespace redPhysics3d {
         std::vector<std::unique_ptr<CollisionShape>> collisionShapes;
         Quaternion orientation;
         Vector3 position;
+        float elasticity = 0.2;
 
         Matrix3x3 rotationMatrix, invertedRotationMatrix;
     };

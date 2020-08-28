@@ -114,8 +114,6 @@ namespace redPhysics3d {
     }
 
     void CollisionResolver::applyImpulses() {
-        float elasticity = 0.3;
-
         for(const Contact& contact : m_collisionData.contacts) {
             Vector3 velocityChange1, velocityChange2, angularVelocityChange1, angularVelocityChange2;
 
@@ -145,6 +143,8 @@ namespace redPhysics3d {
 
                 deltaVelocity += velocityPerUnitImpulse2.dot(n) + rigidbodies[1]->getInverseMass();
             }
+
+            float elasticity = (contact.colliders[0]->getCollisionBody()->elasticity + contact.colliders[1]->getCollisionBody()->elasticity) * 0.5;
 
             float cn = (-1 - elasticity) * closingVelocity.dot(n);
             Vector3 impulse = n * (cn / deltaVelocity);

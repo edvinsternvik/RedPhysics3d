@@ -32,7 +32,7 @@ namespace redPhysics3d {
 
     private:
         Vector3 m_externalForce, m_externalTorque;
-        float m_mass = 1.0, m_elasticity, m_inverseMass = 1.0;
+        float m_mass = 1.0, m_inverseMass = 1.0;
 
         float damping = 0.995;
         friend class PhysicsWorld;
