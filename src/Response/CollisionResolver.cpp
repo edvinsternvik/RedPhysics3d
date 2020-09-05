@@ -144,15 +144,15 @@ namespace redPhysics3d {
                 deltaVelocity += velocityPerUnitImpulse2.dot(n) + rigidbodies[1]->getInverseMass();
             }
 
-            float elasticity = (contact.colliders[0]->getCollisionBody()->elasticity + contact.colliders[1]->getCollisionBody()->elasticity) * 0.5;
+            float coefficientOfRestitution = (contact.colliders[0]->getCollisionBody()->bounciness + contact.colliders[1]->getCollisionBody()->bounciness) * 0.5;
             float deltaVelFromAcceleration = 0.0;
             if(rigidbodies[0]) deltaVelFromAcceleration += rigidbodies[0]->acceleration.dot(n) * deltaTime;
             if(rigidbodies[1]) deltaVelFromAcceleration -= rigidbodies[1]->acceleration.dot(n) * deltaTime;
 
             float closingVelocityAlongNormal = closingVelocity.dot(n);
-            if(std::abs(closingVelocityAlongNormal) < 0.25) elasticity = 0.0;
+            if(std::abs(closingVelocityAlongNormal) < 0.25) coefficientOfRestitution = 0.0;
 
-            float cn = -closingVelocityAlongNormal - elasticity * (closingVelocityAlongNormal - deltaVelFromAcceleration);
+            float cn = -closingVelocityAlongNormal - coefficientOfRestitution * (closingVelocityAlongNormal - deltaVelFromAcceleration);
             Vector3 impulse = n * (cn / deltaVelocity);
 
             if(rigidbodies[0]) {
