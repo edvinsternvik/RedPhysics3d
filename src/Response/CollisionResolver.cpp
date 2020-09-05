@@ -34,7 +34,7 @@ namespace redPhysics3d {
 
         float linearMove[2] = {0.0, 0.0}, angularMove[2] = {0.0, 0.0};
         float totalInertia = 0.0, linearInertia[2] = {0.0, 0.0}, angularInertia[2] = {0.0,0.0};
-        Vector3 rotationPerMove[2];
+        Vector3 rotationPerMove[2] = { Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 0.0) };
         for(int i = 0; i < 2; ++i) {
             if(rigidbodies[i] != nullptr) {
                 Vector3 contactRelative = contact.contactPoint - rigidbodies[i]->position;
@@ -59,7 +59,7 @@ namespace redPhysics3d {
         angularMove[1] = -contact.penetration * angularInertia[1] * inverseInertia;
 
         // Limit or lock rotation
-        float limitConstant = 0.2;
+        float limitConstant = 0.001;
         for(int i = 0; i < 2; ++i) {
             if(rigidbodies[i] != nullptr) {
                 float totalMove = angularMove[i] + linearMove[i];
