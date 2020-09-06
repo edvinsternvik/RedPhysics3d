@@ -6,15 +6,20 @@ namespace redPhysics3d {
 
     class Contact {
     public:
-        Contact(CollisionShape* collider1, CollisionShape* collider2, const Vector3& point, const Vector3& collider1Normal, const float& penetration)
-            : colliders{collider1, collider2}, contactPoint(point), collider1Normal(collider1Normal), penetration(penetration) {
-                
-        }
+        Contact(CollisionShape* collider1, CollisionShape* collider2, const Vector3& point, const Vector3& collider1Normal, const float& penetration);
 
+        void prepareContact();
+
+    private:
+        Matrix3x3 calculateWorldToContactMatrix() const;
+
+    public:
         CollisionShape* colliders[2];
         Vector3 contactPoint;
         Vector3 collider1Normal;
         float penetration;
+        Vector3 relativeContactPosition[2];
+        Matrix3x3 worldToContactMatrix;
     };
 
     class CollisionData {
