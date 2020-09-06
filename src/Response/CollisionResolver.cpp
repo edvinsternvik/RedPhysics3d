@@ -20,7 +20,7 @@ namespace redPhysics3d {
 
             Vector3 linearMove[2] = {Vector3(), Vector3()}, angularMove[2] = {Vector3(), Vector3()};
             resolveContact(*worstContact, linearMove, angularMove);
-            updatePenetrations(worstContact->colliders[0]->getCollisionBody(), worstContact->colliders[1]->getCollisionBody(), linearMove, angularMove); // FIX: ONLY update penetrations for moved objects
+            updatePenetrations(worstContact->colliders[0]->getCollisionBody(), worstContact->colliders[1]->getCollisionBody(), linearMove, angularMove);
         }
 
         // Change velocities
@@ -114,68 +114,92 @@ namespace redPhysics3d {
     }
 
     void CollisionResolver::applyImpulses(float deltaTime) {
-        for(const Contact& contact : m_collisionData.contacts) {
-            Vector3 velocityChange1, velocityChange2, angularVelocityChange1, angularVelocityChange2;
-
-            Vector3 n = contact.collider1Normal;
+        for(Contact& contact : m_collisionData.contacts) {
+            contact.prepareContact();
+            
             RigidBody* rigidbodies[2];
-            rigidbodies[0] = contact.colliders[0]->getCollisionBody()->getCollisionBodyType() == CollisionBodyType::Dynamic ? (RigidBody*)contact.colliders[0]->getCollisionBody() : nullptr;
-            rigidbodies[1] = contact.colliders[1]->getCollisionBody()->getCollisionBodyType() == CollisionBodyType::Dynamic ? (RigidBody*)contact.colliders[1]->getCollisionBody() : nullptr;
+            getRigidBodies(&contact, rigidbodies);
 
-            Vector3 r1 = contact.contactPoint - contact.colliders[0]->getCollisionBody()->position;
-            Vector3 r2 = contact.contactPoint - contact.colliders[1]->getCollisionBody()->position;
-
-            Vector3 closingVelocity;
-            float deltaVelocity = 0.0;
-
-            if(rigidbodies[0]) {
-                closingVelocity = (rigidbodies[0]->linearVelocity + rigidbodies[0]->angularVelocity.cross(r1)) * -1.0;
-
-                Vector3 velocityPerUnitImpulse1 = (rigidbodies[0]->inverseInertiaWorld * (r1.cross(n))).cross(r1);
-
-                deltaVelocity = velocityPerUnitImpulse1.dot(n) + rigidbodies[0]->getInverseMass();
-            }
-
-            if(rigidbodies[1]) {
-                closingVelocity += rigidbodies[1]->linearVelocity + rigidbodies[1]->angularVelocity.cross(r2);
-
-                Vector3 velocityPerUnitImpulse2 = (rigidbodies[1]->inverseInertiaWorld * (r2.cross(n))).cross(r2);
-
-                deltaVelocity += velocityPerUnitImpulse2.dot(n) + rigidbodies[1]->getInverseMass();
-            }
+            Vector3 velPerImpulse = getVelocityPerUnitImpulse(&contact);
+            Vector3 closingVelocity = getClosingVelocity(&contact);
 
             float coefficientOfRestitution = (contact.colliders[0]->getCollisionBody()->bounciness + contact.colliders[1]->getCollisionBody()->bounciness) * 0.5;
             float deltaVelFromAcceleration = 0.0;
-            if(rigidbodies[0]) deltaVelFromAcceleration += rigidbodies[0]->acceleration.dot(n) * deltaTime;
-            if(rigidbodies[1]) deltaVelFromAcceleration -= rigidbodies[1]->acceleration.dot(n) * deltaTime;
+            if(rigidbodies[0]) deltaVelFromAcceleration += rigidbodies[0]->acceleration.dot(contact.collider1Normal) * deltaTime;
+            if(rigidbodies[1]) deltaVelFromAcceleration -= rigidbodies[1]->acceleration.dot(contact.collider1Normal) * deltaTime;
 
-            float closingVelocityAlongNormal = closingVelocity.dot(n);
-            if(std::abs(closingVelocityAlongNormal) < 0.25) coefficientOfRestitution = 0.0;
+            if(std::abs(closingVelocity.x) < 0.1) coefficientOfRestitution = 0.0;
 
-            float cn = -closingVelocityAlongNormal - coefficientOfRestitution * (closingVelocityAlongNormal - deltaVelFromAcceleration);
-            Vector3 impulse = n * (cn / deltaVelocity);
+            float desiredDeltaVelocity = -closingVelocity.x - coefficientOfRestitution * (closingVelocity.x - deltaVelFromAcceleration);
 
-            if(rigidbodies[0]) {
-                velocityChange1 -= impulse * rigidbodies[0]->getInverseMass();
-                angularVelocityChange1 += rigidbodies[0]->inverseInertia * (impulse.cross(r1));
-            }
+            Vector3 impulseContact = Vector3(0.0, 0.0, 0.0);
+            impulseContact.x = desiredDeltaVelocity / velPerImpulse.x;
 
-            if(rigidbodies[1]) {
-                velocityChange2 += impulse * rigidbodies[1]->getInverseMass();
-                angularVelocityChange2 -= rigidbodies[1]->inverseInertia * (impulse.cross(r2));
-            }
+            Vector3 impulse = contact.worldToContactMatrix.transpose() * impulseContact;
 
-            if(rigidbodies[0]) {
-                rigidbodies[0]->linearVelocity += velocityChange1;
-                if(!rigidbodies[0]->lockRotation) rigidbodies[0]->angularVelocity += angularVelocityChange1;
-            }
+            if(rigidbodies[0]) applyImpulseToRigidbody(rigidbodies[0], impulse * -1.0, contact.relativeContactPosition[0]);
+            if(rigidbodies[1]) applyImpulseToRigidbody(rigidbodies[1], impulse       , contact.relativeContactPosition[1]);
+        }
 
-            if(rigidbodies[1]) {
-                rigidbodies[1]->linearVelocity += velocityChange2;
-                if(!rigidbodies[1]->lockRotation) rigidbodies[1]->angularVelocity += angularVelocityChange2;
+    }
+
+    Vector3 CollisionResolver::getVelocityPerUnitImpulse(const Contact* contact) {
+        RigidBody* rigidbodies[2];
+        getRigidBodies(contact, rigidbodies);
+
+        Vector3 velPerImpulse = Vector3(0.0, 0.0, 0.0);
+
+        for(int i = 0; i < 2; ++i) {
+            if(rigidbodies[i]) {
+                Vector3 angularVelPerImpulse = contact->relativeContactPosition[i].cross(contact->collider1Normal);
+                angularVelPerImpulse = rigidbodies[i]->inverseInertiaWorld * angularVelPerImpulse;
+                angularVelPerImpulse = angularVelPerImpulse.cross(contact->relativeContactPosition[i]);
+
+                velPerImpulse += contact->worldToContactMatrix * angularVelPerImpulse;
+                velPerImpulse += Vector3(rigidbodies[i]->getInverseMass(), rigidbodies[i]->getInverseMass(), rigidbodies[i]->getInverseMass());
             }
         }
 
+        return velPerImpulse;
+    }
+
+    Vector3 CollisionResolver::getClosingVelocity(const Contact* contact) {
+        RigidBody* rigidbodies[2];
+        getRigidBodies(contact, rigidbodies);
+
+        Vector3 contactVelocity = Vector3(0.0, 0.0, 0.0);
+
+        for(int i = 0; i < 2; ++i) {
+            float direction = (i == 0) ? -1.0 : 1.0;
+
+            if(rigidbodies[i]) {
+                Vector3 velocity = rigidbodies[i]->angularVelocity.cross(contact->relativeContactPosition[i]);
+                velocity += rigidbodies[i]->linearVelocity;
+                velocity = velocity * direction;
+                contactVelocity += contact->worldToContactMatrix * velocity;
+            }
+        }
+
+        return contactVelocity;
+    }
+
+    void CollisionResolver::applyImpulseToRigidbody(RigidBody* rigidBody, const Vector3& impulse, const Vector3& contactPosition) {
+        Vector3 velocityChange = impulse * rigidBody->getInverseMass();
+
+        Vector3 rotationChange = rigidBody->inverseInertia * (impulse.cross(contactPosition)) * -1.0;
+
+        rigidBody->linearVelocity += velocityChange;
+        rigidBody->angularVelocity += rotationChange;
+    }
+
+    void CollisionResolver::getRigidBodies(const Contact* contact, RigidBody* rb[2]) {
+        if(contact) {
+            rb[0] = contact->colliders[0]->getCollisionBody()->getCollisionBodyType() == CollisionBodyType::Dynamic ? (RigidBody*)contact->colliders[0]->getCollisionBody() : nullptr;
+            rb[1] = contact->colliders[1]->getCollisionBody()->getCollisionBodyType() == CollisionBodyType::Dynamic ? (RigidBody*)contact->colliders[1]->getCollisionBody() : nullptr;
+        }
+        else {
+            rb[0] = rb[1] = nullptr;
+        }
     }
 
 }
