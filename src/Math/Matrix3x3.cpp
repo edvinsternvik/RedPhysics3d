@@ -52,9 +52,50 @@ namespace redPhysics3d {
         return Matrix3x3(std::cos(rotationZ), -std::sin(rotationZ), 0.0,    std::sin(rotationZ), std::cos(rotationZ), 0.0,   0.0, 0.0, 1.0);
     }
 
-    // Matrix3x3 Matrix3x3::getRotationMatrix(const Vector3& rotation) {
-    //     return getRotationMatrixZ(rotation.z) * getRotationMatrixY(rotation.y) * getRotationMatrixX(rotation.x);
-    // }
+    Matrix3x3 Matrix3x3::getSkewSymmetric(const Vector3& v) {
+        return Matrix3x3(
+          0, -v.z, v.y,
+          v.z, 0, -v.x,
+          -v.y, v.x, 0
+        );
+    }
+
+    Matrix3x3 Matrix3x3::operator*(const Matrix3x3& o) const {
+        return Matrix3x3(
+            at(0,0) * o.at(0,0) + at(0,1) * o.at(1,0) + at(0,2) * o.at(2,0), at(0,0) * o.at(0,1) + at(0,1) * o.at(1,1) + at(0,2) * o.at(2,1), at(0,0) * o.at(0,2) + at(0,1) * o.at(1,2) + at(0,2) * o.at(2,2),
+            at(1,0) * o.at(0,0) + at(1,1) * o.at(1,0) + at(1,2) * o.at(2,0), at(1,0) * o.at(0,1) + at(1,1) * o.at(1,1) + at(1,2) * o.at(2,1), at(1,0) * o.at(0,2) + at(1,1) * o.at(1,2) + at(1,2) * o.at(2,2),
+            at(2,0) * o.at(0,0) + at(2,1) * o.at(1,0) + at(2,2) * o.at(2,0), at(2,0) * o.at(0,1) + at(2,1) * o.at(1,1) + at(2,2) * o.at(2,1), at(2,0) * o.at(0,2) + at(2,1) * o.at(1,2) + at(2,2) * o.at(2,2)
+        );
+    }
+
+    void Matrix3x3::operator*=(const Matrix3x3& o) {
+        Matrix3x3 t = *this;
+        this->at(0,0) = t.at(0,0) * o.at(0,0) + t.at(0,1) * o.at(1,0) + t.at(0,2) * o.at(2,0); this->at(0,1) = t.at(0,0) * o.at(0,1) + t.at(0,1) * o.at(1,1) + t.at(0,2) * o.at(2,1); this->at(0,2) =  t.at(0,0) * o.at(0,2) + t.at(0,1) * o.at(1,2) + t.at(0,2) * o.at(2,2);
+        this->at(1,0) = t.at(1,0) * o.at(0,0) + t.at(1,1) * o.at(1,0) + t.at(1,2) * o.at(2,0); this->at(1,1) = t.at(1,0) * o.at(0,1) + t.at(1,1) * o.at(1,1) + t.at(1,2) * o.at(2,1); this->at(1,2) =  t.at(1,0) * o.at(0,2) + t.at(1,1) * o.at(1,2) + t.at(1,2) * o.at(2,2);
+        this->at(2,0) = t.at(2,0) * o.at(0,0) + t.at(2,1) * o.at(1,0) + t.at(2,2) * o.at(2,0); this->at(2,1) = t.at(2,0) * o.at(0,1) + t.at(2,1) * o.at(1,1) + t.at(2,2) * o.at(2,1); this->at(2,2) =  t.at(2,0) * o.at(0,2) + t.at(2,1) * o.at(1,2) + t.at(2,2) * o.at(2,2);
+    }
+
+    void Matrix3x3::operator+=(const Matrix3x3& o) {
+        for(int i = 0; i < 3; ++i) {
+            for(int j = 0; j < 3; ++j) {
+                data[i][j] += o.data[i][j];
+            }
+        }
+    }
+
+    void Matrix3x3::operator*=(const float& o) {
+        for(int i = 0; i < 3; ++i) {
+            for(int j = 0; j < 3; ++j) {
+                data[i][j] *= o;
+            }
+        }
+    }
+
+    Vector3 Matrix3x3::operator*(const Vector3& vec3) const {
+        return Vector3(at(0, 0) * vec3.x + at(0, 1) * vec3.y + at(0, 2) * vec3.z,
+                        at(1, 0) * vec3.x + at(1, 1) * vec3.y + at(1, 2) * vec3.z,
+                        at(2, 0) * vec3.x + at(2, 1) * vec3.y + at(2, 2) * vec3.z);
+    }
 
 
 }

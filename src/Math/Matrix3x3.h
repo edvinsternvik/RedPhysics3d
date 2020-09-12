@@ -21,28 +21,14 @@ namespace redPhysics3d {
         static Matrix3x3 getRotationMatrixX(const float& rotationX);
         static Matrix3x3 getRotationMatrixY(const float& rotationY);
         static Matrix3x3 getRotationMatrixZ(const float& rotationZ);
-        // static Matrix3x3 getRotationMatrix(const Vector3& rotation);
 
-        Matrix3x3 operator*(const Matrix3x3& o) const {
-			return Matrix3x3(
-                at(0,0) * o.at(0,0) + at(0,1) * o.at(1,0) + at(0,2) * o.at(2,0), at(0,0) * o.at(0,1) + at(0,1) * o.at(1,1) + at(0,2) * o.at(2,1), at(0,0) * o.at(0,2) + at(0,1) * o.at(1,2) + at(0,2) * o.at(2,2),
-                at(1,0) * o.at(0,0) + at(1,1) * o.at(1,0) + at(1,2) * o.at(2,0), at(1,0) * o.at(0,1) + at(1,1) * o.at(1,1) + at(1,2) * o.at(2,1), at(1,0) * o.at(0,2) + at(1,1) * o.at(1,2) + at(1,2) * o.at(2,2),
-                at(2,0) * o.at(0,0) + at(2,1) * o.at(1,0) + at(2,2) * o.at(2,0), at(2,0) * o.at(0,1) + at(2,1) * o.at(1,1) + at(2,2) * o.at(2,1), at(2,0) * o.at(0,2) + at(2,1) * o.at(1,2) + at(2,2) * o.at(2,2)
-            );
-		}
+        static Matrix3x3 getSkewSymmetric(const Vector3& v);
 
-        void operator*=(const Matrix3x3& o) {
-            Matrix3x3 t = *this;
-            this->at(0,0) = t.at(0,0) * o.at(0,0) + t.at(0,1) * o.at(1,0) + t.at(0,2) * o.at(2,0); this->at(0,1) = t.at(0,0) * o.at(0,1) + t.at(0,1) * o.at(1,1) + t.at(0,2) * o.at(2,1); this->at(0,2) =  t.at(0,0) * o.at(0,2) + t.at(0,1) * o.at(1,2) + t.at(0,2) * o.at(2,2);
-            this->at(1,0) = t.at(1,0) * o.at(0,0) + t.at(1,1) * o.at(1,0) + t.at(1,2) * o.at(2,0); this->at(1,1) = t.at(1,0) * o.at(0,1) + t.at(1,1) * o.at(1,1) + t.at(1,2) * o.at(2,1); this->at(1,2) =  t.at(1,0) * o.at(0,2) + t.at(1,1) * o.at(1,2) + t.at(1,2) * o.at(2,2);
-            this->at(2,0) = t.at(2,0) * o.at(0,0) + t.at(2,1) * o.at(1,0) + t.at(2,2) * o.at(2,0); this->at(2,1) = t.at(2,0) * o.at(0,1) + t.at(2,1) * o.at(1,1) + t.at(2,2) * o.at(2,1); this->at(2,2) =  t.at(2,0) * o.at(0,2) + t.at(2,1) * o.at(1,2) + t.at(2,2) * o.at(2,2);
-		}
-
-        Vector3 operator*(const Vector3& vec3) const {
-			return Vector3(at(0, 0) * vec3.x + at(0, 1) * vec3.y + at(0, 2) * vec3.z,
-						   at(1, 0) * vec3.x + at(1, 1) * vec3.y + at(1, 2) * vec3.z,
-						   at(2, 0) * vec3.x + at(2, 1) * vec3.y + at(2, 2) * vec3.z);
-		}
+        Matrix3x3 operator*(const Matrix3x3& o) const;
+        void operator*=(const Matrix3x3& o);
+        void operator+=(const Matrix3x3& o);
+        void operator*=(const float& o);
+        Vector3 operator*(const Vector3& vec3) const;
 
         friend std::ostream& operator<<(std::ostream& os, const Matrix3x3& m) {
 			return os << "{ " << m.data[0][0] << ", " << m.data[0][1] << ", " << m.data[0][2] << "\n"
