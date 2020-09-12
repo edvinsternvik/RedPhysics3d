@@ -128,7 +128,7 @@ namespace redPhysics3d {
 
             Vector3 impulseContact = impulsePerVel * desiredDeltaVelocity;
 
-            float friction = 0.5;
+            float friction = (contact.colliders[0]->getCollisionBody()->friction + contact.colliders[1]->getCollisionBody()->friction) * 0.5;
             float planarImpulse = std::sqrt(impulseContact.y * impulseContact.y + impulseContact.z * impulseContact.z);
             if(planarImpulse > -impulseContact.x * friction) {
                 float temp = impulseContact.y;

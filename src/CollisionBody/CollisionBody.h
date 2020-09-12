@@ -34,7 +34,7 @@ namespace redPhysics3d {
         std::vector<std::unique_ptr<CollisionShape>> collisionShapes;
         Quaternion orientation;
         Vector3 position;
-        float bounciness = 0.2;
+        float bounciness = 0.2, friction = 0.5;
 
         Matrix3x3 rotationMatrix, invertedRotationMatrix;
     };
