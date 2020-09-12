@@ -120,20 +120,28 @@ namespace redPhysics3d {
             RigidBody* rigidbodies[2];
             getRigidBodies(&contact, rigidbodies);
 
-            Vector3 velPerImpulse = getVelocityPerUnitImpulse(&contact);
+            Matrix3x3 velPerImpulse = getVelocityPerUnitImpulse(&contact);
+            Matrix3x3 impulsePerVel = velPerImpulse.inverse();
+
             Vector3 closingVelocity = getClosingVelocity(&contact);
+            Vector3 desiredDeltaVelocity = getDesiredDeltaVelocity(&contact, closingVelocity, deltaTime);
 
-            float coefficientOfRestitution = (contact.colliders[0]->getCollisionBody()->bounciness + contact.colliders[1]->getCollisionBody()->bounciness) * 0.5;
-            float deltaVelFromAcceleration = 0.0;
-            if(rigidbodies[0]) deltaVelFromAcceleration += rigidbodies[0]->acceleration.dot(contact.collider1Normal) * deltaTime;
-            if(rigidbodies[1]) deltaVelFromAcceleration -= rigidbodies[1]->acceleration.dot(contact.collider1Normal) * deltaTime;
+            Vector3 impulseContact = impulsePerVel * desiredDeltaVelocity;
 
-            if(std::abs(closingVelocity.x) < 0.1) coefficientOfRestitution = 0.0;
+            float friction = 0.5;
+            float planarImpulse = std::sqrt(impulseContact.y * impulseContact.y + impulseContact.z * impulseContact.z);
+            if(planarImpulse > -impulseContact.x * friction) {
+                float temp = impulseContact.y;
+                impulseContact.y /= planarImpulse;
+                impulseContact.z /= planarImpulse;
 
-            float desiredDeltaVelocity = -closingVelocity.x - coefficientOfRestitution * (closingVelocity.x - deltaVelFromAcceleration);
-
-            Vector3 impulseContact = Vector3(0.0, 0.0, 0.0);
-            impulseContact.x = desiredDeltaVelocity / velPerImpulse.x;
+                impulseContact.x = -(velPerImpulse.at(0, 0) +
+                    velPerImpulse.at(1,0) * friction * impulseContact.y +
+                    velPerImpulse.at(2,0) * friction * impulseContact.z);
+                impulseContact.x = -desiredDeltaVelocity.x / impulseContact.x;
+                impulseContact.y *= std::abs(impulseContact.x) * friction;
+                impulseContact.z *= std::abs(impulseContact.x) * friction;
+            }
 
             Vector3 impulse = contact.worldToContactMatrix.transpose() * impulseContact;
 
@@ -143,24 +151,37 @@ namespace redPhysics3d {
 
     }
 
-    Vector3 CollisionResolver::getVelocityPerUnitImpulse(const Contact* contact) {
+    Matrix3x3 CollisionResolver::getVelocityPerUnitImpulse(const Contact* contact) {
         RigidBody* rigidbodies[2];
         getRigidBodies(contact, rigidbodies);
 
-        Vector3 velPerImpulse = Vector3(0.0, 0.0, 0.0);
+        Matrix3x3 deltaVelWorld = Matrix3x3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        float inverseMass = 0.0;
 
+        // Velocity from angular motion
         for(int i = 0; i < 2; ++i) {
             if(rigidbodies[i]) {
-                Vector3 angularVelPerImpulse = contact->relativeContactPosition[i].cross(contact->collider1Normal);
-                angularVelPerImpulse = rigidbodies[i]->inverseInertiaWorld * angularVelPerImpulse;
-                angularVelPerImpulse = angularVelPerImpulse.cross(contact->relativeContactPosition[i]);
+                Matrix3x3 impulseToTorque = Matrix3x3::getSkewSymmetric(contact->relativeContactPosition[i]);
+                
+                Matrix3x3 dVelWorld = impulseToTorque;
+                dVelWorld = dVelWorld * rigidbodies[i]->inverseInertiaWorld;
+                dVelWorld = dVelWorld * impulseToTorque;
+                dVelWorld *= -1.0f;
 
-                velPerImpulse += contact->worldToContactMatrix * angularVelPerImpulse;
-                velPerImpulse += Vector3(rigidbodies[i]->getInverseMass(), rigidbodies[i]->getInverseMass(), rigidbodies[i]->getInverseMass());
+                deltaVelWorld += dVelWorld;
+
+                inverseMass += rigidbodies[i]->getInverseMass();
             }
         }
 
-        return velPerImpulse;
+        Matrix3x3 deltaVelocity = contact->worldToContactMatrix;
+        deltaVelocity = deltaVelocity * deltaVelWorld;
+        deltaVelocity = deltaVelocity * contact->worldToContactMatrix.transpose();
+
+        // Velocity from linear motion
+        for(int i = 0; i < 3; ++i) deltaVelocity.at(i, i) += inverseMass;
+
+        return deltaVelocity;
     }
 
     Vector3 CollisionResolver::getClosingVelocity(const Contact* contact) {
@@ -181,6 +202,22 @@ namespace redPhysics3d {
         }
 
         return contactVelocity;
+    }
+
+    Vector3 CollisionResolver::getDesiredDeltaVelocity(Contact* contact, const Vector3& closingVelocity, const float& deltaTime) {
+        RigidBody* rigidbodies[2];
+        getRigidBodies(contact, rigidbodies);
+        
+        float coefficientOfRestitution = (contact->colliders[0]->getCollisionBody()->bounciness + contact->colliders[1]->getCollisionBody()->bounciness) * 0.5;
+        float deltaVelFromAcceleration = 0.0;
+        if(rigidbodies[0]) deltaVelFromAcceleration += rigidbodies[0]->acceleration.dot(contact->collider1Normal) * deltaTime;
+        if(rigidbodies[1]) deltaVelFromAcceleration -= rigidbodies[1]->acceleration.dot(contact->collider1Normal) * deltaTime;
+
+        if(std::abs(closingVelocity.x) < 0.1) coefficientOfRestitution = 0.0;
+
+        float desiredDeltaVelocity = -closingVelocity.x - coefficientOfRestitution * (closingVelocity.x - deltaVelFromAcceleration);
+
+        return Vector3(desiredDeltaVelocity, -closingVelocity.y, -closingVelocity.z);
     }
 
     void CollisionResolver::applyImpulseToRigidbody(RigidBody* rigidBody, const Vector3& impulse, const Vector3& contactPosition) {
