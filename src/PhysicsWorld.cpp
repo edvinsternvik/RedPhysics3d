@@ -31,6 +31,11 @@ namespace redPhysics3d {
                 cs->updateCollisionShape();
             }
         }
+        for(auto& sb : m_staticbodies) {
+            for(auto& cs : sb->collisionShapes) {
+                cs->updateCollisionShape();
+            }
+        }
 
         CollisionData collisionData;
 
@@ -71,8 +76,11 @@ namespace redPhysics3d {
     void PhysicsWorld::generateContacts(CollisionData& collisionData) {
         std::vector<PotentialCollision> pCollisions;
 
-        for(int i = 0; i < m_rigidbodies.size(); ++i) {
-            m_boundingVolumeTree.update(m_rigidbodies[i].get());
+        for(auto& rb : m_rigidbodies) {
+            m_boundingVolumeTree.update(rb.get());
+        }
+        for(auto& sb : m_staticbodies) {
+            m_boundingVolumeTree.update(sb.get());
         }
         m_boundingVolumeTree.getPotentialCollisions(pCollisions);
 
